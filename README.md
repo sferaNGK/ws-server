@@ -10,7 +10,18 @@
 
 ```bash
 bun install
+```
+
+```bash
 bun start:dev
+```
+
+## Подключение со стороны клиента
+
+```typescript
+export const socket = io('http://localhost:8080/test', {
+  transports: ['websocket'],
+});
 ```
 
 ### Функционал 
