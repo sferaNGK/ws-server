@@ -2,7 +2,7 @@
 
 [Дока socket.io](https://socket.io/docs/v3/)
 
-В качестве пакетного менеджера используется Bun, как установить на винде - [Дока Bun](https://bun.sh/docs/installation)
+В качестве пакетного менеджера используется Bun, как установить на винде - [Дока Bun](https://bun.sh/docs/installation#windows)
 
 ## Как завести?
 
