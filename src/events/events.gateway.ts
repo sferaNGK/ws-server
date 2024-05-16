@@ -6,57 +6,81 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { OnModuleInit } from '@nestjs/common';
+import { OnModuleInit, UseFilters } from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import { generateCode } from '@/utils/generateCode';
+import { PrismaClientExceptionFilter } from '@/filters/prisma-client-exception.filter';
+import { Prisma } from '@prisma/client';
 
-@WebSocketGateway({ namespace: '/test' })
+@WebSocketGateway({
+  namespace: '/test',
+  cors: '*',
+})
+@UseFilters(new PrismaClientExceptionFilter())
 export class EventsGateway implements OnModuleInit {
+  constructor(private readonly prismaService: PrismaService) {}
+
   @WebSocketServer()
-  server: Server;
-  private code = '1234';
-  private clientId: string = 'dAF7SAnjAS_';
-  private roomId: string = 'lutaya-komnata-dlya-testa';
-
-  @SubscribeMessage('game:start')
-  onStartGame(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { clientId: string },
-  ): any {
-    if (data.clientId !== this.clientId) {
-      return;
-    }
-
-    this.server
-      .to(this.roomId)
-      .emit('game:start', { msg: 'Да начнется рубилово...' });
-  }
+  private server: Server;
 
   @SubscribeMessage('user:registerTeam')
-  onRegister(
+  async onRegister(
     @ConnectedSocket() client: Socket,
     @MessageBody()
     data: {
-      clientId: string;
       teamName: string;
-      code: string;
     },
-  ): any {
-    const { clientId, teamName, code } = data;
-    this.server.emit('user:registerTeam', { clientId, teamName, code });
+  ): Promise<void> {
+    const { teamName } = data;
+    const code = generateCode(6);
+
+    await this.prismaService.user.create({
+      data: {
+        teamName,
+        clientId: client.id,
+        role: 'PLAYER',
+        code,
+      },
+    });
+
+    client.emit('user:registerTeam', { code });
   }
 
   @SubscribeMessage('user:verifyCode')
-  onVerifyCode(
+  async onVerifyCode(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { code: string; clientId: string },
-  ): any {
+  ): Promise<void> {
     const { code, clientId } = data;
-    client.emit('user:verifyCode', { success: code === this.code });
+    const user = await this.prismaService.user.findUnique({
+      where: { clientId },
+    });
+
+    if (!user || !user.code) return;
+
+    if (user.code !== code) {
+      throw new Prisma.PrismaClientKnownRequestError('Неверный код.', {
+        code: 'P2025',
+        meta: {
+          modelName: 'Code',
+        },
+        clientVersion: '5.13.0',
+      });
+    }
+
+    const updatedUser = await this.prismaService.user.update({
+      where: { clientId },
+      data: {
+        isVerified: true,
+      },
+    });
+
+    client.emit('user:verifyCode', { success: updatedUser.isVerified });
   }
 
   onModuleInit(): any {
     this.server.on('connect', (client: Socket) => {
-      client.join(this.roomId);
-      console.log(client.rooms);
+      console.log(client.id);
     });
   }
 }
