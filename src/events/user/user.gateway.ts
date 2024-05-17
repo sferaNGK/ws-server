@@ -17,7 +17,7 @@ import { Prisma } from '@prisma/client';
   cors: '*',
 })
 @UseFilters(new PrismaClientExceptionFilter())
-export class EventsGateway implements OnModuleInit {
+export class UserGateway implements OnModuleInit {
   constructor(private readonly prismaService: PrismaService) {}
 
   @WebSocketServer()

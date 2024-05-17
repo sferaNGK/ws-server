@@ -7,7 +7,6 @@ import { createMock } from '@golevelup/ts-jest';
 
 describe('EventsGateway', () => {
   let app: INestApplication;
-  let eventsGateway: EventsGateway;
   let ioClient: Socket;
   let prismaService: PrismaService;
 
@@ -23,7 +22,6 @@ describe('EventsGateway', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    eventsGateway = moduleRef.get<EventsGateway>(EventsGateway);
     prismaService = moduleRef.get<PrismaService>(PrismaService);
 
     await app.listen(8000);
