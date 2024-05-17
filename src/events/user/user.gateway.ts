@@ -13,7 +13,7 @@ import { PrismaClientExceptionFilter } from '@/filters/prisma-client-exception.f
 import { Prisma } from '@prisma/client';
 
 @WebSocketGateway({
-  namespace: '/test',
+  namespace: '/user',
   cors: '*',
 })
 @UseFilters(new PrismaClientExceptionFilter())

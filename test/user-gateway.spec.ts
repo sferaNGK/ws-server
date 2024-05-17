@@ -1,11 +1,11 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { EventsGateway } from '@/events/events.gateway';
+import { UserGateway } from '@/events/user/user.gateway';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Socket, io } from 'socket.io-client';
 import { createMock } from '@golevelup/ts-jest';
 
-describe('EventsGateway', () => {
+describe('UserGateway', () => {
   let app: INestApplication;
   let ioClient: Socket;
   let prismaService: PrismaService;
@@ -13,7 +13,7 @@ describe('EventsGateway', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
-        EventsGateway,
+        UserGateway,
         {
           provide: PrismaService,
           useValue: createMock<PrismaService>(),
