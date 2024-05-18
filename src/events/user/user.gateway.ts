@@ -8,13 +8,12 @@ import {
 import { Server, Socket } from 'socket.io';
 import { OnModuleInit, UseFilters } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { generateCode } from '@/utils/generateCode';
-import { PrismaClientExceptionFilter } from '@/filters/prisma-client-exception.filter';
+import { generateCode } from '@/utils';
+import { PrismaClientExceptionFilter } from '@/filters';
 import { Prisma } from '@prisma/client';
 
 @WebSocketGateway({
-  namespace: '/user',
-  cors: '*',
+  cors: { origin: '*' },
 })
 @UseFilters(new PrismaClientExceptionFilter())
 export class UserGateway implements OnModuleInit {

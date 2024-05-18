@@ -29,6 +29,18 @@ model User {
   @@map("users")
 }
 
+model Game {
+  id    Int    @id @default(autoincrement())
+  title String
+  url   String
+  port  Int?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("games")
+}
+
 enum Role {
   PLAYER
   ADMIN
