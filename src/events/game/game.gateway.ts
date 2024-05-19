@@ -9,12 +9,16 @@ import { RemoteSocket, Server, Socket } from 'socket.io';
 import { PrismaService } from '@/prisma/prisma.service';
 import { assignRandomGames } from '@/utils';
 import { Game } from '@prisma/client';
+import { RedisService } from '@/redis/redis.service';
 
 @WebSocketGateway({
   cors: { origin: '*' },
 })
 export class GameGateway {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   @WebSocketServer()
   private server: Server;
