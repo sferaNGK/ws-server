@@ -36,7 +36,6 @@ export class UserGateway implements OnModuleInit {
     await this.prismaService.user.create({
       data: {
         teamName,
-        clientId: client.id,
         role: 'PLAYER',
         code,
       },
@@ -48,16 +47,14 @@ export class UserGateway implements OnModuleInit {
   @SubscribeMessage('user:verifyCode')
   async onVerifyCode(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { code: string; clientId: string },
+    @MessageBody() data: { code: string },
   ): Promise<void> {
-    const { code, clientId } = data;
-    const user = await this.prismaService.user.findUnique({
-      where: { clientId },
+    const { code } = data;
+    const user = await this.prismaService.user.findFirst({
+      where: { code },
     });
 
-    if (!user || !user.code) return;
-
-    if (user.code !== code) {
+    if (!user)
       throw new Prisma.PrismaClientKnownRequestError('Неверный код.', {
         code: 'P2025',
         meta: {
@@ -65,12 +62,13 @@ export class UserGateway implements OnModuleInit {
         },
         clientVersion: '5.13.0',
       });
-    }
 
     const updatedUser = await this.prismaService.user.update({
-      where: { clientId },
+      where: { code },
       data: {
+        clientId: client.id,
         isVerified: true,
+        code: null,
       },
     });
 
