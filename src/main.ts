@@ -11,7 +11,7 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
-  await app.listen(7171, '0.0.0.0');
+  await app.listen(7171, '192.168.10.53');
 }
 
 bootstrap();

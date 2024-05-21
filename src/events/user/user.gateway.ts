@@ -77,6 +77,7 @@ export class UserGateway implements OnModuleInit {
 
   onModuleInit(): any {
     this.server.on('connect', (client: Socket) => {
+      // console.log(client.handshake.headers);
       console.log(client.id);
     });
   }
