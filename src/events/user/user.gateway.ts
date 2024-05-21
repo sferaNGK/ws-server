@@ -11,13 +11,17 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { generateCode } from '@/utils';
 import { PrismaClientExceptionFilter } from '@/filters';
 import { Prisma } from '@prisma/client';
+import { AppLogger } from '@/app-logger/app-logger';
 
 @WebSocketGateway({
   cors: { origin: '*' },
 })
 @UseFilters(new PrismaClientExceptionFilter())
 export class UserGateway implements OnModuleInit {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly logger: AppLogger,
+  ) {}
 
   @WebSocketServer()
   private server: Server;
@@ -77,8 +81,10 @@ export class UserGateway implements OnModuleInit {
 
   onModuleInit(): any {
     this.server.on('connect', (client: Socket) => {
-      // console.log(client.handshake.headers);
-      console.log(client.id);
+      this.logger.debug(
+        [client.handshake.address, client.id].join(' '),
+        'UserGateway',
+      );
     });
   }
 }

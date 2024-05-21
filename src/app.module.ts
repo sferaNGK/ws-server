@@ -6,6 +6,7 @@ import { ResultModule } from './result/result.module';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from '@/redis/redis.module';
 import { MyGameModule } from '@/events/mygame/mygame.module';
+import { AppLoggerModule } from '@/app-logger/app-logger.module';
 
 @Module({
   imports: [
@@ -16,8 +17,10 @@ import { MyGameModule } from '@/events/mygame/mygame.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    AppLoggerModule,
     RedisModule,
     MyGameModule,
+    AppLoggerModule,
   ],
   controllers: [],
   providers: [],

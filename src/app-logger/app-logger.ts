@@ -1,7 +1,7 @@
-import { ConsoleLogger, Injectable, LoggerService } from '@nestjs/common';
+import { ConsoleLogger, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class AppLogger extends ConsoleLogger implements LoggerService {
+export class AppLogger extends ConsoleLogger {
   constructor() {
     super();
   }
