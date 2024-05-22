@@ -1,6 +1,5 @@
 FROM oven/bun:latest
 
-# Установите рабочую директорию
 WORKDIR /usr/src/app
 
 COPY package.json ./
@@ -10,7 +9,7 @@ RUN bun install
 
 COPY . .
 
-RUN bun prisma migrate dev --preview-feature
+#bun prisma db push --accept-data-loss
 
 EXPOSE 3000
 

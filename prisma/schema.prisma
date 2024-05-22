@@ -48,7 +48,7 @@ model Board {
   id Int @id @default(autoincrement())
 
   place  Int
-  ip     String
+  ip     String  @unique
   isBusy Boolean @default(false) @map("is_busy")
 
   createdAt      DateTime         @default(now()) @map("created_at")
@@ -73,7 +73,7 @@ model GameSession {
 
 model GameAssignment {
   id            Int      @id @default(autoincrement())
-  gameId        Int      @map("game_id")
+  gameId        Int?     @map("game_id")
   boardId       Int      @map("board_id")
   userId        Int      @map("user_id")
   gameSessionId Int      @map("game_session_id")
@@ -83,7 +83,7 @@ model GameAssignment {
 
   board       Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game        Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  game        Game?       @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameSession GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
 
   @@map("game_assignments")
