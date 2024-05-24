@@ -21,7 +21,7 @@ model User {
   teamName      String? @map("team_name")
   clientId      String? @unique() @map("client_id")
   role          Role
-  code          String? @unique()
+  code          String @unique()
   isVerified    Boolean @default(false) @map("is_verified")
   points        Int     @default(0)
   gameSessionId Int     @map("game_session_id")

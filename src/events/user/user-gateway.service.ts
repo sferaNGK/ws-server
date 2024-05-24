@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
 import { AppLogger } from '@/app-logger/app-logger';
-import { RegisterTeamHandler, VerifyCodeHandler } from '@/types';
+import { RegisterTeamData, VerifyCodeData } from '@/types';
 import { Prisma, User, Board, GameSession } from '@prisma/client';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class UserGatewayService {
   async onRegisterTeam({
     teamName,
     code,
-  }: RegisterTeamHandler): Promise<{ user: User; board: Board }> {
+  }: RegisterTeamData): Promise<{ user: User; board: Board }> {
     const currentSession: GameSession = JSON.parse(
       await this.redisService.get('currentGameSession'),
     );
@@ -88,7 +88,7 @@ export class UserGatewayService {
     code,
     ip,
     client,
-  }: VerifyCodeHandler): Promise<boolean | void> {
+  }: VerifyCodeData): Promise<boolean | void> {
     const gameSession = await this.redisService.get('currentGameSession');
 
     if (!gameSession) {
@@ -138,7 +138,6 @@ export class UserGatewayService {
         boardId: board.id,
         clientId: client.id,
         isVerified: true,
-        code: null,
       },
     });
 

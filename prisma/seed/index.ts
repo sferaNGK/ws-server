@@ -6,22 +6,22 @@ async function main() {
   const board = prisma.board.createMany({
     data: [
       {
-        ip: '192.168.1.124',
+        ip: '192.168.10.53',
         place: 1,
         isBusy: false,
       },
       {
-        ip: '192.168.1.125',
+        ip: '192.168.10.54',
         place: 2,
         isBusy: false,
       },
       {
-        ip: '192.168.1.126',
+        ip: '192.168.10.55',
         place: 3,
         isBusy: false,
       },
       {
-        ip: '192.168.1.127',
+        ip: '192.168.10.56',
         place: 4,
         isBusy: false,
       },

@@ -9,10 +9,11 @@ import { Server, Socket } from 'socket.io';
 import { PrismaService } from '@/prisma/prisma.service';
 import { GameSession } from '@prisma/client';
 import { RedisService } from '@/redis/redis.service';
-import { CreateGameSessionData } from '@/types';
+import { CreateGameSessionData, GameEndData } from '@/types';
 import { AppLogger } from '@/app-logger/app-logger';
 import { UseFilters } from '@nestjs/common';
 import { PrismaClientExceptionFilter } from '@/filters';
+import { shuffle } from '@/utils';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -29,14 +30,14 @@ export class GameGateway {
   private server: Server;
 
   @SubscribeMessage('game:join')
-  async handleJoin(@ConnectedSocket() socket: Socket): Promise<void> {
+  async onGameJoin(@ConnectedSocket() socket: Socket): Promise<void> {
     const currentSession = await this.redisService.get('currentGameSession');
     if (!currentSession) return;
     socket.join(JSON.parse(currentSession).title);
   }
 
   @SubscribeMessage('game:createGameSession')
-  async handleCreateGameSession(
+  async onCreateGameSession(
     @MessageBody() data: CreateGameSessionData,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
@@ -63,7 +64,7 @@ export class GameGateway {
   }
 
   @SubscribeMessage('game:start')
-  async handleStart(@MessageBody() data: { isAdmin: boolean }): Promise<void> {
+  async onStart(@MessageBody() data: { isAdmin: boolean }): Promise<void> {
     if (!data.isAdmin) return;
     const games = await this.prismaService.game.findMany();
     const currentSession: GameSession = JSON.parse(
@@ -75,11 +76,18 @@ export class GameGateway {
       const user = await this.prismaService.user.findUnique({
         where: { clientId: socket.handshake.query.clientId as string },
         include: {
+          gameAssignment: {
+            include: {
+              game: true,
+            },
+          },
           board: true,
         },
       });
 
-      for (const game of games) {
+      const shuffledGames = shuffle(games);
+
+      for await (const game of shuffledGames) {
         if (game.url === 'VR') {
           await this.prismaService.gameAssignment.create({
             data: {
@@ -100,6 +108,55 @@ export class GameGateway {
           });
         }
       }
+
+      if (
+        user.gameAssignment &&
+        Array.isArray(user.gameAssignment) &&
+        user.gameAssignment.length > 0
+      ) {
+        socket.emit('game:start', {
+          isStarted: true,
+          game: user.gameAssignment.shift().game,
+        });
+      }
     }
+  }
+
+  @SubscribeMessage('game:end')
+  async onGameEnd(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: GameEndData,
+  ) {
+    const { game } = data;
+    const user = await this.prismaService.user.findUnique({
+      where: { clientId: socket.handshake.query.clientId as string },
+      include: {
+        board: true,
+      },
+    });
+
+    const prismaGame = await this.prismaService.game.findUniqueOrThrow({
+      where: { id: game.id },
+      include: {
+        gameAssignment: {
+          where: {
+            userId: user.id,
+            boardId: user.board.id,
+            gameId: game.id,
+          },
+          include: {
+            gameSession: true,
+          },
+        },
+      },
+    });
+
+    await this.prismaService.gameAssignment.delete({
+      where: {
+        id: prismaGame.gameAssignment.shift().id,
+      },
+    });
+
+    socket.emit('game:end', { isStarted: false });
   }
 }
