@@ -15,18 +15,23 @@ datasource db {
 }
 
 model User {
-  id         Int     @id @default(autoincrement())
-  email      String? @unique()
-  password   String?
-  teamName   String? @unique() @map("team_name")
-  clientId   String? @unique() @map("client_id")
-  role       Role
-  code       String? @unique()
-  isVerified Boolean @default(false) @map("is_verified")
+  id            Int     @id @default(autoincrement())
+  email         String? @unique()
+  password      String?
+  teamName      String? @map("team_name")
+  clientId      String? @unique() @map("client_id")
+  role          Role
+  code          String? @unique()
+  isVerified    Boolean @default(false) @map("is_verified")
+  points        Int     @default(0)
+  gameSessionId Int     @map("game_session_id")
+  boardId       Int?    @map("board_id")
 
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
-  GameAssignment GameAssignment[]
+  gameAssignment GameAssignment[]
+  gameSession    GameSession      @relation(fields: [gameSessionId], references: [id])
+  board          Board?           @relation(fields: [boardId], references: [id])
 
   @@map("users")
 }
@@ -39,7 +44,7 @@ model Game {
 
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
-  GameAssignment GameAssignment[]
+  gameAssignment GameAssignment[]
 
   @@map("games")
 }
@@ -53,7 +58,8 @@ model Board {
 
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
-  GameAssignment GameAssignment[]
+  gameAssignment GameAssignment[]
+  User           User[]
 
   @@map("boards")
 }
@@ -66,7 +72,8 @@ model GameSession {
 
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
-  GameAssignment GameAssignment[]
+  gameAssignment GameAssignment[]
+  user           User[]
 
   @@map("game_sessions")
 }

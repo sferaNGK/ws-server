@@ -5,17 +5,19 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { RemoteSocket, Server, Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { PrismaService } from '@/prisma/prisma.service';
-import { assignRandomGames } from '@/utils';
-import { Game } from '@prisma/client';
+import { GameSession } from '@prisma/client';
 import { RedisService } from '@/redis/redis.service';
-import { createGameSessionData } from '@/types';
+import { CreateGameSessionData } from '@/types';
 import { AppLogger } from '@/app-logger/app-logger';
+import { UseFilters } from '@nestjs/common';
+import { PrismaClientExceptionFilter } from '@/filters';
 
 @WebSocketGateway({
   cors: { origin: '*' },
 })
+@UseFilters(new PrismaClientExceptionFilter())
 export class GameGateway {
   constructor(
     private readonly prismaService: PrismaService,
@@ -27,13 +29,15 @@ export class GameGateway {
   private server: Server;
 
   @SubscribeMessage('game:join')
-  handleJoin(@ConnectedSocket() socket: Socket): void {
-    socket.join('game');
+  async handleJoin(@ConnectedSocket() socket: Socket): Promise<void> {
+    const currentSession = await this.redisService.get('currentGameSession');
+    if (!currentSession) return;
+    socket.join(JSON.parse(currentSession).title);
   }
 
   @SubscribeMessage('game:createGameSession')
   async handleCreateGameSession(
-    @MessageBody() data: createGameSessionData,
+    @MessageBody() data: CreateGameSessionData,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     const { isAdmin, title } = data;
@@ -53,20 +57,49 @@ export class GameGateway {
       JSON.stringify(gameSession),
     );
 
-    client.emit('game:createGameSession', { isCreated: true, gameSession });
+    const gameSessions = await this.prismaService.gameSession.findMany();
+
+    client.emit('game:createGameSession', { isCreated: true, gameSessions });
   }
 
   @SubscribeMessage('game:start')
   async handleStart(@MessageBody() data: { isAdmin: boolean }): Promise<void> {
     if (!data.isAdmin) return;
     const games = await this.prismaService.game.findMany();
-    const users = await this.server.in('game').fetchSockets();
-    const assignments = assignRandomGames(users, games);
-
-    assignments.forEach(
-      (socket: { user: RemoteSocket<any, any>; game: Game }) => {
-        socket.user.emit('game:start', { isStarted: true, game: socket.game });
-      },
+    const currentSession: GameSession = JSON.parse(
+      await this.redisService.get('currentGameSession'),
     );
+    const users = await this.server.in(currentSession.title).fetchSockets();
+
+    for (const socket of users) {
+      const user = await this.prismaService.user.findUnique({
+        where: { clientId: socket.handshake.query.clientId as string },
+        include: {
+          board: true,
+        },
+      });
+
+      for (const game of games) {
+        if (game.url === 'VR') {
+          await this.prismaService.gameAssignment.create({
+            data: {
+              userId: user.id,
+              gameId: game.id,
+              gameSessionId: currentSession.id,
+              boardId: 4,
+            },
+          });
+        } else {
+          await this.prismaService.gameAssignment.create({
+            data: {
+              userId: user.id,
+              gameId: game.id,
+              gameSessionId: currentSession.id,
+              boardId: user.board.id,
+            },
+          });
+        }
+      }
+    }
   }
 }

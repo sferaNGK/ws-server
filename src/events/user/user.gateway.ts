@@ -7,12 +7,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { OnModuleInit, UseFilters } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
 import { generateCode } from '@/utils';
 import { PrismaClientExceptionFilter } from '@/filters';
-import { Prisma } from '@prisma/client';
 import { AppLogger } from '@/app-logger/app-logger';
-import { RedisService } from '@/redis/redis.service';
+import { UserGatewayService } from '@/events/user/user-gateway.service';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -20,9 +18,8 @@ import { RedisService } from '@/redis/redis.service';
 @UseFilters(new PrismaClientExceptionFilter())
 export class UserGateway implements OnModuleInit {
   constructor(
-    private readonly prismaService: PrismaService,
+    private readonly userService: UserGatewayService,
     private readonly logger: AppLogger,
-    private readonly redis: RedisService,
   ) {}
 
   @WebSocketServer()
@@ -39,15 +36,12 @@ export class UserGateway implements OnModuleInit {
     const { teamName } = data;
     const code = generateCode(6);
 
-    await this.prismaService.user.create({
-      data: {
-        teamName,
-        role: 'PLAYER',
-        code,
-      },
+    const { user, board } = await this.userService.onRegisterTeam({
+      teamName,
+      code,
     });
 
-    client.emit('user:registerTeam', { code });
+    client.emit('user:registerTeam', { code: user.code, board: board });
   }
 
   @SubscribeMessage('user:verifyCode')
@@ -58,59 +52,24 @@ export class UserGateway implements OnModuleInit {
     const { code } = data;
     const ip = client.handshake.address;
 
-    const user = await this.prismaService.user.findFirst({
-      where: { code },
+    const isVerified = await this.userService.onVerifyCode({
+      code,
+      ip,
+      client,
     });
 
-    const board = await this.prismaService.board.findUnique({
-      where: { ip },
-    });
-
-    if (!user)
-      throw new Prisma.PrismaClientKnownRequestError('Неверный код.', {
-        code: 'P2025',
-        meta: {
-          modelName: 'Code',
-        },
-        clientVersion: '5.14.0',
-      });
-
-    if (!board)
-      throw new Prisma.PrismaClientKnownRequestError('Доска не найдена.', {
-        code: 'P2025',
-        meta: {
-          modelName: 'Board',
-        },
-        clientVersion: '5.14.0',
-      });
-
-    const updatedUser = await this.prismaService.user.update({
-      where: { code },
-      data: {
-        clientId: client.id,
-        isVerified: true,
-        code: null,
-      },
-    });
-
-    const updatedBoard = await this.prismaService.board.update({
-      where: { ip },
-      data: {
-        isBusy: true,
-      },
-    });
-
-    if (await this.redis.get('currentGameSession')) {
-      //
-    }
-
-    client.emit('user:verifyCode', { success: updatedUser.isVerified });
+    client.emit('user:verifyCode', { success: isVerified });
   }
 
   onModuleInit(): any {
     this.server.on('connect', (client: Socket) => {
       this.logger.debug(
-        [client.handshake.address, client.id].join(' '),
+        'User connected: ' +
+          [
+            client.handshake.address,
+            client.id,
+            client.handshake.query.clientId as string,
+          ].join(' '),
         UserGateway.name,
       );
     });

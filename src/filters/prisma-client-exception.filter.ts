@@ -11,6 +11,8 @@ export class PrismaClientExceptionFilter<T> implements ExceptionFilter {
 
     const error = exception as Prisma.PrismaClientKnownRequestError;
 
+    console.log(error.message);
+
     client.emit(ctx.getPattern(), {
       error: e(error.meta['modelName'] as string, error.code),
     });

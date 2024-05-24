@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from '@/redis/redis.module';
 import { MyGameModule } from '@/events/mygame/mygame.module';
 import { AppLoggerModule } from '@/app-logger/app-logger.module';
+import { GameSessionModule } from './session/game-session.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AppLoggerModule } from '@/app-logger/app-logger.module';
     RedisModule,
     MyGameModule,
     AppLoggerModule,
+    GameSessionModule,
   ],
   controllers: [],
   providers: [],

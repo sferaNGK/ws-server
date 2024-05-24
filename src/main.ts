@@ -11,7 +11,11 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
-  await app.listen(3000);
+  app.enableCors({
+    origin: '*',
+  });
+
+  await app.listen(7171, '192.168.1.124');
 }
 
 bootstrap();
