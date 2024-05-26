@@ -3,9 +3,9 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class GameSessionService {
-  constructor(private readonly prismaService: PrismaService) {}
+	constructor(private readonly prismaService: PrismaService) {}
 
-  getGameSessions() {
-    return this.prismaService.gameSession.findMany();
-  }
+	getGameSessions() {
+		return this.prismaService.gameSession.findMany();
+	}
 }

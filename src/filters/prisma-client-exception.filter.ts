@@ -5,16 +5,16 @@ import { e } from '@/utils';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaClientExceptionFilter<T> implements ExceptionFilter {
-  catch(exception: T, host: ArgumentsHost) {
-    const ctx = host.switchToWs();
-    const client = ctx.getClient<Socket>();
+	catch(exception: T, host: ArgumentsHost) {
+		const ctx = host.switchToWs();
+		const client = ctx.getClient<Socket>();
 
-    const error = exception as Prisma.PrismaClientKnownRequestError;
+		const error = exception as Prisma.PrismaClientKnownRequestError;
 
-    console.log(error.message);
+		console.log(error.message, error.code, error.meta);
 
-    client.emit(ctx.getPattern(), {
-      error: e(error.meta['modelName'] as string, error.code),
-    });
-  }
+		client.emit(ctx.getPattern(), {
+			error: e(error.meta['modelName'] as string, error.code),
+		});
+	}
 }

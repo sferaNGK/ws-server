@@ -19,9 +19,10 @@ model User {
   email         String? @unique()
   password      String?
   teamName      String? @map("team_name")
-  clientId      String? @unique() @map("client_id")
+  clientIdPhone String? @unique() @map("client_id_phone")
+  clientIdBoard String? @unique() @map("client_id_board")
   role          Role
-  code          String @unique()
+  code          String  @unique()
   isVerified    Boolean @default(false) @map("is_verified")
   points        Int     @default(0)
   gameSessionId Int     @map("game_session_id")
@@ -69,9 +70,11 @@ model GameSession {
 
   title       String
   isCompleted Boolean @default(false) @map("is_completed")
+  isStarted   Boolean @default(false) @map("is_started")
 
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   gameAssignment GameAssignment[]
   user           User[]
 
@@ -81,14 +84,14 @@ model GameSession {
 model GameAssignment {
   id            Int      @id @default(autoincrement())
   gameId        Int?     @map("game_id")
-  boardId       Int      @map("board_id")
+  boardId       Int?     @map("board_id")
   userId        Int      @map("user_id")
   gameSessionId Int      @map("game_session_id")
   isCompleted   Boolean  @default(false) @map("is_completed")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  board       Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  board       Board?      @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   game        Game?       @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameSession GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)

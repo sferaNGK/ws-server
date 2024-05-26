@@ -1,13 +1,13 @@
 import {
-  ConnectedSocket,
-  MessageBody,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer,
+	ConnectedSocket,
+	MessageBody,
+	SubscribeMessage,
+	WebSocketGateway,
+	WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '@/prisma/prisma.service';
-import { GameSession } from '@prisma/client';
+import { Game, GameSession } from '@prisma/client';
 import { RedisService } from '@/redis/redis.service';
 import { CreateGameSessionData, GameEndData } from '@/types';
 import { AppLogger } from '@/app-logger/app-logger';
@@ -16,147 +16,229 @@ import { PrismaClientExceptionFilter } from '@/filters';
 import { shuffle } from '@/utils';
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+	cors: { origin: '*' },
 })
 @UseFilters(new PrismaClientExceptionFilter())
 export class GameGateway {
-  constructor(
-    private readonly prismaService: PrismaService,
-    private readonly logger: AppLogger,
-    private readonly redisService: RedisService,
-  ) {}
+	constructor(
+		private readonly prismaService: PrismaService,
+		private readonly logger: AppLogger,
+		private readonly redisService: RedisService,
+	) {}
 
-  @WebSocketServer()
-  private server: Server;
+	@WebSocketServer()
+	private server: Server;
 
-  @SubscribeMessage('game:join')
-  async onGameJoin(@ConnectedSocket() socket: Socket): Promise<void> {
-    const currentSession = await this.redisService.get('currentGameSession');
-    if (!currentSession) return;
-    socket.join(JSON.parse(currentSession).title);
-  }
+	@SubscribeMessage('game:join')
+	async onGameJoin(@ConnectedSocket() socket: Socket): Promise<void> {
+		const currentSession = await this.redisService.get('currentGameSession');
+		if (!currentSession) return;
+		socket.join(JSON.parse(currentSession).title);
+	}
 
-  @SubscribeMessage('game:createGameSession')
-  async onCreateGameSession(
-    @MessageBody() data: CreateGameSessionData,
-    @ConnectedSocket() client: Socket,
-  ): Promise<void> {
-    const { isAdmin, title } = data;
-    if (!isAdmin) return;
-    const gameSession = await this.prismaService.gameSession.create({
-      data: { title },
-    });
+	@SubscribeMessage('game:createGameSession')
+	async onCreateGameSession(
+		@MessageBody() data: CreateGameSessionData,
+		@ConnectedSocket() client: Socket,
+	): Promise<void> {
+		const { isAdmin, title } = data;
+		if (!isAdmin) return;
+		const gameSession = await this.prismaService.gameSession.create({
+			data: { title },
+		});
 
-    this.logger.log(
-      `Game session created ${gameSession.title}`,
-      GameGateway.name,
-    );
+		this.logger.log(
+			`Game session created ${gameSession.title}`,
+			GameGateway.name,
+		);
 
-    await this.redisService.setex(
-      'currentGameSession',
-      7200,
-      JSON.stringify(gameSession),
-    );
+		await this.redisService.setex(
+			'currentGameSession',
+			7200,
+			JSON.stringify(gameSession),
+		);
 
-    const gameSessions = await this.prismaService.gameSession.findMany();
+		const gameSessions = await this.prismaService.gameSession.findMany();
 
-    client.emit('game:createGameSession', { isCreated: true, gameSessions });
-  }
+		client.emit('game:createGameSession', { isCreated: true, gameSessions });
+	}
 
-  @SubscribeMessage('game:start')
-  async onStart(@MessageBody() data: { isAdmin: boolean }): Promise<void> {
-    if (!data.isAdmin) return;
-    const games = await this.prismaService.game.findMany();
-    const currentSession: GameSession = JSON.parse(
-      await this.redisService.get('currentGameSession'),
-    );
-    const users = await this.server.in(currentSession.title).fetchSockets();
+	@SubscribeMessage('game:start')
+	async onStart(@MessageBody() data: { isAdmin: boolean }): Promise<void> {
+		if (!data.isAdmin) return;
+		const games = await this.prismaService.game.findMany();
+		const currentSession: GameSession = JSON.parse(
+			await this.redisService.get('currentGameSession'),
+		);
 
-    for (const socket of users) {
-      const user = await this.prismaService.user.findUnique({
-        where: { clientId: socket.handshake.query.clientId as string },
-        include: {
-          gameAssignment: {
-            include: {
-              game: true,
-            },
-          },
-          board: true,
-        },
-      });
+		const users = await this.server.in(currentSession.title).fetchSockets();
 
-      const shuffledGames = shuffle(games);
+		for (const socket of users) {
+			let user = await this.prismaService.user.findUnique({
+				where: {
+					clientIdBoard: socket.handshake.query.clientIdBoard as string,
+				},
+				include: {
+					gameAssignment: {
+						include: {
+							game: true,
+						},
+					},
+					board: true,
+				},
+			});
 
-      for await (const game of shuffledGames) {
-        if (game.url === 'VR') {
-          await this.prismaService.gameAssignment.create({
-            data: {
-              userId: user.id,
-              gameId: game.id,
-              gameSessionId: currentSession.id,
-              boardId: 4,
-            },
-          });
-        } else {
-          await this.prismaService.gameAssignment.create({
-            data: {
-              userId: user.id,
-              gameId: game.id,
-              gameSessionId: currentSession.id,
-              boardId: user.board.id,
-            },
-          });
-        }
-      }
+			const shuffledGames = shuffle<Game>(games);
 
-      if (
-        user.gameAssignment &&
-        Array.isArray(user.gameAssignment) &&
-        user.gameAssignment.length > 0
-      ) {
-        socket.emit('game:start', {
-          isStarted: true,
-          game: user.gameAssignment.shift().game,
-        });
-      }
-    }
-  }
+			for await (const game of shuffledGames) {
+				if (game.url === 'VR') {
+					await this.prismaService.gameAssignment.create({
+						data: {
+							userId: user.id,
+							gameId: game.id,
+							gameSessionId: currentSession.id,
+							boardId: 4,
+						},
+					});
+				} else {
+					await this.prismaService.gameAssignment.create({
+						data: {
+							userId: user.id,
+							gameId: game.id,
+							gameSessionId: currentSession.id,
+							boardId: user.board.id,
+						},
+					});
+				}
+			}
 
-  @SubscribeMessage('game:end')
-  async onGameEnd(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() data: GameEndData,
-  ) {
-    const { game } = data;
-    const user = await this.prismaService.user.findUnique({
-      where: { clientId: socket.handshake.query.clientId as string },
-      include: {
-        board: true,
-      },
-    });
+			user = await this.prismaService.user.findUnique({
+				where: {
+					clientIdBoard: socket.handshake.query.clientIdBoard as string,
+				},
+				include: {
+					gameAssignment: {
+						include: {
+							game: true,
+						},
+					},
+					board: true,
+				},
+			});
 
-    const prismaGame = await this.prismaService.game.findUniqueOrThrow({
-      where: { id: game.id },
-      include: {
-        gameAssignment: {
-          where: {
-            userId: user.id,
-            boardId: user.board.id,
-            gameId: game.id,
-          },
-          include: {
-            gameSession: true,
-          },
-        },
-      },
-    });
+			const gameSession = await this.prismaService.gameSession.findUnique({
+				where: { id: currentSession.id },
+			});
 
-    await this.prismaService.gameAssignment.delete({
-      where: {
-        id: prismaGame.gameAssignment.shift().id,
-      },
-    });
+			const updatedGameSession = await this.prismaService.gameSession.update({
+				where: { id: gameSession.id },
+				data: { isStarted: true },
+			});
 
-    socket.emit('game:end', { isStarted: false });
-  }
+			const game = user.gameAssignment.shift().game;
+			this.logger.debug(game, GameGateway.name);
+			socket.emit('game:start', {
+				isStarted: updatedGameSession.isStarted,
+				game,
+			});
+		}
+	}
+
+	@SubscribeMessage('game:end')
+	async onGameEnd(
+		@ConnectedSocket() socket: Socket,
+		@MessageBody() data: GameEndData,
+	): Promise<void> {
+		const { game } = data;
+
+		const user = await this.prismaService.user.findUniqueOrThrow({
+			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },
+			include: {
+				board: true,
+			},
+		});
+
+		const prismaGame = await this.prismaService.game.findUniqueOrThrow({
+			where: { id: game.id },
+			include: {
+				gameAssignment: {
+					where: {
+						gameId: game.id,
+						userId: user.id,
+						boardId: user.board.id,
+					},
+					include: {
+						gameSession: true,
+					},
+				},
+			},
+		});
+
+		const firstGameAssignment = prismaGame.gameAssignment.shift();
+		const gameSessionId = firstGameAssignment.gameSessionId;
+
+		await this.prismaService.gameAssignment.update({
+			where: {
+				id: firstGameAssignment.id,
+			},
+			data: {
+				isCompleted: true,
+			},
+		});
+
+		const [result, count] = await Promise.all([
+			this.prismaService.gameAssignment.findMany({
+				where: {
+					gameSessionId,
+					isCompleted: true,
+				},
+			}),
+			this.prismaService.gameAssignment.count({
+				where: {
+					gameSessionId,
+				},
+			}),
+		]);
+
+		if (result.length === count) {
+			const endedGameSession = await this.prismaService.gameSession.update({
+				where: { id: gameSessionId },
+				data: { isStarted: false, isCompleted: true },
+			});
+
+			socket.emit('game:endGameSession', {
+				isCompleted: endedGameSession.isCompleted,
+			});
+
+			return;
+		}
+
+		const newBoard = await this.prismaService.board.findFirstOrThrow({
+			where: { isBusy: false, AND: { place: { not: user.board.place } } },
+		});
+
+		await this.prismaService.board.update({
+			where: { id: user.board.id },
+			data: { isBusy: false },
+		});
+
+		await this.prismaService.user.update({
+			where: { id: user.id },
+			data: { board: { connect: { id: newBoard.id } } },
+			include: { board: true },
+		});
+
+		await this.prismaService.board.update({
+			where: { id: newBoard.id },
+			data: { isBusy: true },
+		});
+
+		this.logger.debug(newBoard, GameGateway.name);
+
+		socket.emit('game:end', { isStarted: false });
+		this.server.emit('game:newBoard', {
+			clientIdPhone: user.clientIdPhone,
+			board: newBoard,
+		});
+	}
 }

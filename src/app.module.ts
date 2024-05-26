@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from '@/events/user/user.module';
+import { UserModule as UserGatewayModule } from '@/events/user/user.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { GameModule } from '@/events/game/game.module';
 import { ResultModule } from './result/result.module';
@@ -8,23 +8,25 @@ import { RedisModule } from '@/redis/redis.module';
 import { MyGameModule } from '@/events/mygame/mygame.module';
 import { AppLoggerModule } from '@/app-logger/app-logger.module';
 import { GameSessionModule } from './session/game-session.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [
-    UserModule,
-    PrismaModule,
-    GameModule,
-    ResultModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-    AppLoggerModule,
-    RedisModule,
-    MyGameModule,
-    AppLoggerModule,
-    GameSessionModule,
-  ],
-  controllers: [],
-  providers: [],
+	imports: [
+		UserGatewayModule,
+		PrismaModule,
+		GameModule,
+		ResultModule,
+		ConfigModule.forRoot({
+			isGlobal: true,
+		}),
+		AppLoggerModule,
+		RedisModule,
+		MyGameModule,
+		AppLoggerModule,
+		GameSessionModule,
+		UserModule,
+	],
+	controllers: [],
+	providers: [],
 })
 export class AppModule {}
