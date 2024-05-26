@@ -210,6 +210,8 @@ export class GameGateway {
 				isCompleted: endedGameSession.isCompleted,
 			});
 
+			// TODO: Очки с пользователями для показа на фронте
+
 			return;
 		}
 

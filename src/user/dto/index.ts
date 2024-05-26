@@ -1,1 +1,1 @@
-export * from './teamName-check.dto';
+export * from './teamname-check.dto';

@@ -1,7 +1,8 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { UserService } from '@/user/user.service';
-import { TeamNameCheckDto } from '@/user/dto';
+import { TeamnameCheckDto } from '@/user/dto';
 import { FastifyReply } from 'fastify';
+import { AddPointsDto } from '@/user/dto/add-points.dto';
 
 @Controller('user')
 export class UserController {
@@ -9,14 +10,17 @@ export class UserController {
 
 	@Post('check')
 	async checkTeamName(
-		@Body() data: TeamNameCheckDto,
+		@Body() data: TeamnameCheckDto,
 		@Res() response: FastifyReply,
-	) {
-		const { teamName } = data;
-		const result = await this.userService.checkTeamName({ teamName });
+	): Promise<void> {
+		response.code(200).send(await this.userService.checkTeamName(data));
+	}
 
-		result.success
-			? response.code(200).send(result)
-			: response.code(400).send(result);
+	@Post('points')
+	async addPoints(
+		@Body() data: AddPointsDto,
+		@Res() response: FastifyReply,
+	): Promise<void> {
+		response.code(200).send(await this.userService.addPoints(data));
 	}
 }
