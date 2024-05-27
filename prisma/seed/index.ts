@@ -36,20 +36,32 @@ async function main() {
 	const games = prisma.game.createMany({
 		data: [
 			{
-				title: 'Game 1',
-				url: 'http://192.168.10.124:5173/game/1',
+				title: 'Сортер комплектующие',
+				url: 'http://192.168.10.53:1888/game/1',
 			},
 			{
-				title: 'Game 2',
-				url: 'http://192.168.10.124:5173/game/2',
+				title: 'Сортер программист',
+				url: 'http://192.168.10.53:1888/game/2',
 			},
 			{
-				title: 'Game 3',
-				url: 'http://192.168.10.124:5173/game/3',
+				title: 'Сортер распорядок',
+				url: 'http://192.168.10.53:1888/game/3',
 			},
 			{
-				title: 'Game 4',
-				url: 'http://192.168.10.124:5173/game/4',
+				title: 'Сортер качества воспитателя',
+				url: 'http://192.168.10.53:1888/game/4',
+			},
+			{
+				title: 'Ситуации | детская психология',
+				url: 'http://192.168.10.53:1777/game/1',
+			},
+			{
+				title: 'Ситуации | педагогические ситуации',
+				url: 'http://192.168.10.53:1777/game/2',
+			},
+			{
+				title: 'Ситуации | языки программирования',
+				url: 'http://192.168.10.53:1777/game/3',
 			},
 		],
 		skipDuplicates: true,
