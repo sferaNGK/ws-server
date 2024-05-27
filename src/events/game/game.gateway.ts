@@ -149,7 +149,9 @@ export class GameGateway {
 		@ConnectedSocket() socket: Socket,
 		@MessageBody() data: GameEndData,
 	): Promise<void> {
-		const { game } = data;
+		const { game, points } = data;
+
+		console.log(game, points);
 
 		const user = await this.prismaService.user.findUniqueOrThrow({
 			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },
@@ -186,6 +188,15 @@ export class GameGateway {
 			},
 		});
 
+		await this.prismaService.user.update({
+			where: {
+				id: user.id,
+			},
+			data: {
+				points: user.points + points,
+			},
+		});
+
 		const [result, count] = await Promise.all([
 			this.prismaService.gameAssignment.findMany({
 				where: {
@@ -211,7 +222,7 @@ export class GameGateway {
 			});
 
 			// TODO: Очки с пользователями для показа на фронте
-
+			// TODO: Почему пускает по кругу?
 			return;
 		}
 

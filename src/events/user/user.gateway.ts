@@ -59,13 +59,17 @@ export class UserGateway implements OnModuleInit {
 			client,
 		});
 
-		if (typeof verifyResult === 'boolean') {
-			client.emit('user:verifyCode', { success: verifyResult });
+		if ('game' in verifyResult) {
+			client.emit('user:verifyCode', {
+				game: verifyResult?.game,
+				success: true,
+				isSessionStarted: verifyResult?.isSessionStarted,
+				teamName: verifyResult?.teamName,
+			});
 		} else {
 			client.emit('user:verifyCode', {
-				game: verifyResult.game,
-				success: true,
-				isSessionStarted: verifyResult.isSessionStarted,
+				success: verifyResult,
+				teamName: verifyResult.teamName,
 			});
 		}
 	}

@@ -20,4 +20,20 @@ export interface RegisterTeamData {
 
 export interface GameEndData {
 	game: Game;
+	teamName: string;
+	points: number;
 }
+
+interface VerifyCodeSuccess {
+	success: boolean;
+	teamName: string;
+}
+
+interface VerifyCodeFailure {
+	success: boolean;
+	game: Game;
+	isSessionStarted: boolean;
+	teamName: string;
+}
+
+type VerifyCodeResult = VerifyCodeSuccess | VerifyCodeFailure;

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
 import { AppLogger } from '@/app-logger/app-logger';
-import { RegisterTeamData, VerifyCodeData } from '@/types';
-import { Prisma, User, Board, GameSession, Game } from '@prisma/client';
+import { RegisterTeamData, VerifyCodeData, VerifyCodeResult } from '@/types';
+import { Prisma, User, Board, GameSession } from '@prisma/client';
 
 @Injectable()
 export class UserGatewayService {
@@ -97,9 +97,7 @@ export class UserGatewayService {
 		code,
 		ip,
 		client,
-	}: VerifyCodeData): Promise<
-		boolean | { game: Game; isSessionStarted: boolean }
-	> {
+	}: VerifyCodeData): Promise<VerifyCodeResult> {
 		// TODO: если у пользователя есть игра, то нужно ему кинуть ее и смотреть на одну свободную доску! (? kak)
 
 		const gameSession: GameSession = JSON.parse(
@@ -204,11 +202,16 @@ export class UserGatewayService {
 			);
 
 			return {
+				success: updatedUser.isVerified,
 				game: updatedGameAssignment.game,
 				isSessionStarted: prismaGameSession.isStarted,
+				teamName: updatedUser.teamName,
 			};
 		} else {
-			return updatedUser.isVerified;
+			return {
+				success: updatedUser.isVerified,
+				teamName: updatedUser.teamName,
+			};
 		}
 	}
 }

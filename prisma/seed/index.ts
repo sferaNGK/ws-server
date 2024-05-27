@@ -6,25 +6,30 @@ async function main() {
 	const board = prisma.board.createMany({
 		data: [
 			{
-				ip: '192.168.1.238',
+				ip: '192.168.10.146',
 				place: 1,
 				isBusy: false,
 			},
 			{
-				ip: '192.168.1.124',
+				ip: '192.168.10.124',
 				place: 2,
 				isBusy: false,
 			},
 			{
-				ip: '192.168.1.125',
+				ip: '192.168.10.150',
 				place: 3,
 				isBusy: false,
 			},
 			{
-				ip: '192.168.1.126',
+				ip: '192.168.10.149',
 				place: 4,
 				isBusy: false,
 			},
+			// {
+			// 	ip: '192.168.1.126',
+			// 	place: 4,
+			// 	isBusy: false,
+			// },
 		],
 	});
 
@@ -32,20 +37,19 @@ async function main() {
 		data: [
 			{
 				title: 'Game 1',
-				url: 'http://localhost:3000/game/1',
+				url: 'http://192.168.10.124:5173/game/1',
 			},
 			{
 				title: 'Game 2',
-				url: 'http://localhost:3000/game/2',
+				url: 'http://192.168.10.124:5173/game/2',
 			},
 			{
 				title: 'Game 3',
-				url: 'http://localhost:3000/game/3',
+				url: 'http://192.168.10.124:5173/game/3',
 			},
 			{
 				title: 'Game 4',
-				url: 'http://localhost',
-				port: 5100,
+				url: 'http://192.168.10.124:5173/game/4',
 			},
 		],
 		skipDuplicates: true,
