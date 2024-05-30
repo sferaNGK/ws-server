@@ -198,6 +198,35 @@ export class GameGateway {
 			include: { board: true },
 		});
 
+		const userAssignmentsCount = await this.prismaService.gameAssignment.count({
+			where: {
+				userId: updatedUserWithPoints.id,
+				gameSessionId,
+			},
+		});
+
+		const userAssignments = await this.prismaService.gameAssignment.findMany({
+			where: {
+				userId: user.id,
+				gameSessionId,
+				isCompleted: true,
+			},
+		});
+
+		this.logger.debug(userAssignmentsCount, userAssignments);
+
+		if (userAssignmentsCount === userAssignments.length) {
+			socket.emit('game:waiting', { isWaiting: true });
+
+			this.logger.debug('Game is waiting', GameGateway.name);
+
+			this.server.emit('game:waiting', {
+				clientIdPhone: user.clientIdPhone,
+				isWaiting: true,
+			});
+			this.logger.log(userAssignmentsCount, userAssignments, GameGateway.name);
+		}
+
 		const [result, count] = await Promise.all([
 			this.prismaService.gameAssignment.findMany({
 				where: {
@@ -248,33 +277,6 @@ export class GameGateway {
 			where: { id: newBoard.id },
 			data: { isBusy: true },
 		});
-
-		const userAssignmentsCount = await this.prismaService.gameAssignment.count({
-			where: {
-				userId: updatedUserWithPoints.id,
-				gameSessionId,
-			},
-		});
-
-		const userAssignments = await this.prismaService.gameAssignment.findMany({
-			where: {
-				userId: user.id,
-				gameSessionId,
-				isCompleted: true,
-			},
-		});
-
-		this.logger.debug(userAssignmentsCount, userAssignments);
-
-		if (userAssignmentsCount === userAssignments.length) {
-			socket.emit('game:waiting', { isWaiting: true });
-
-			this.server.emit('game:waiting', {
-				clientIdPhone: user.clientIdPhone,
-				isWaiting: true,
-			});
-			this.logger.log(userAssignmentsCount, userAssignments, GameGateway.name);
-		}
 
 		this.logger.debug(newBoard, GameGateway.name);
 

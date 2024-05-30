@@ -64,12 +64,10 @@ export class UserGateway implements OnModuleInit {
 				game: verifyResult?.game,
 				success: true,
 				isSessionStarted: verifyResult?.isSessionStarted,
-				teamName: verifyResult?.teamName,
 			});
 		} else {
 			client.emit('user:verifyCode', {
 				success: verifyResult,
-				teamName: verifyResult.teamName,
 			});
 		}
 	}

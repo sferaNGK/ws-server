@@ -26,14 +26,12 @@ export interface GameEndData {
 
 interface VerifyCodeSuccess {
 	success: boolean;
-	teamName: string;
 }
 
 interface VerifyCodeFailure {
 	success: boolean;
 	game: Game;
 	isSessionStarted: boolean;
-	teamName: string;
 }
 
 type VerifyCodeResult = VerifyCodeSuccess | VerifyCodeFailure;
