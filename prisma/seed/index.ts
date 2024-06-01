@@ -2,39 +2,50 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
+const sphereIP = [
+	'192.168.1.25',
+	'192.168.1.158',
+	'192.168.1.245',
+	'192.168.1.15',
+	'192.168.1.108',
+];
+
+const homeIP = ['192.168.1.124', '192.168.1.238'];
+
+async function main(isHome = false) {
 	const board = prisma.board.createMany({
 		data: [
 			{
-				ip: '192.168.1.25',
+				ip: isHome ? homeIP[0] : sphereIP[0],
 				place: 1,
 				isBusy: false,
 			},
 			{
-				ip: '192.168.1.158',
+				ip: isHome ? homeIP[1] : sphereIP[1],
 				place: 2,
 				isBusy: false,
 			},
-			{
-				ip: '192.168.1.245',
-				place: 3,
-				isBusy: false,
-			},
-			{
-				ip: '192.168.1.15',
-				place: 4,
-				isBusy: false,
-			},
 			// {
-			// 	ip: '192.168.10.149',
-			// 	place: 4,
+			// 	ip: isHome ? homeIP[0] : sphereIP[2],
+			// 	place: 3,
 			// 	isBusy: false,
 			// },
 			// {
-			// 	ip: '192.168.1.126',
+			// 	ip: isHome ? homeIP[1] : sphereIP[3],
 			// 	place: 4,
 			// 	isBusy: false,
 			// },
+		],
+	});
+
+	const specialities = prisma.specialty.createMany({
+		data: [
+			{
+				title: 'Программисты',
+			},
+			{
+				title: 'Дошкольное образование',
+			},
 		],
 	});
 
@@ -43,39 +54,56 @@ async function main() {
 			{
 				title: 'Сортер комплектующие',
 				url: 'http://192.168.1.108:1888/game/1',
+				specialtyId: 1,
 			},
-			{
-				title: 'Сортер программист',
-				url: 'http://192.168.1.108:1888/game/2',
-			},
-			{
-				title: 'Сортер распорядок',
-				url: 'http://192.168.1.108:1888/game/3',
-			},
+			// {
+			// 	title: 'Сортер программист',
+			// 	url: 'http://192.168.1.108:1888/game/2',
+			// 	specialtyId: 1,
+			// },
+			// {
+			// 	title: 'Сортер распорядок',
+			// 	url: 'http://192.168.1.108:1888/game/3',
+			// 	specialtyId: 2,
+			// },
 			// {
 			// 	title: 'Сортер качества воспитателя',
 			// 	url: 'http://192.168.1.108:1888/game/4',
+			// 	specialtyId: 2,
 			// },
 			// {
 			// 	title: 'Ситуации | детская психология',
 			// 	url: 'http://192.168.1.108:1777/game/1',
+			// 	specialtyId: 2,
 			// },
 			// {
 			// 	title: 'Ситуации | педагогические ситуации',
 			// 	url: 'http://192.168.1.108:1777/game/2',
+			// 	specialtyId: 2,
 			// },
 			// {
 			// 	title: 'Ситуации | языки программирования',
 			// 	url: 'http://192.168.1.108:1777/game/3',
+			// 	specialtyId: 1,
+			// },
+			// {
+			// 	title: 'VR | опасные предметы',
+			// 	url: 'VR',
+			// 	specialtyId: 2,
+			// },
+			// {
+			// 	title: 'VR | история ЭВМ',
+			// 	url: 'VR',
+			// 	specialtyId: 1,
 			// },
 		],
 		skipDuplicates: true,
 	});
 
-	await prisma.$transaction([board, games]);
+	await prisma.$transaction([board, specialities, games]);
 }
 
-main()
+main(true)
 	.then(async () => {
 		await prisma.$disconnect();
 	})

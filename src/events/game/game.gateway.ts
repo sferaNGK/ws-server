@@ -7,7 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Game, GameSession } from '@prisma/client';
+import { Game, GameSession, Prisma } from '@prisma/client';
 import { RedisService } from '@/redis/redis.service';
 import { CreateGameSessionData, GameEndData } from '@/types';
 import { AppLogger } from '@/app-logger/app-logger';
@@ -64,12 +64,28 @@ export class GameGateway {
 	}
 
 	@SubscribeMessage('game:start')
-	async onStart(@MessageBody() data: { isAdmin: boolean }): Promise<void> {
+	async onStart(
+		@MessageBody() data: { isAdmin: boolean; specialtyId: number },
+	): Promise<void> {
 		if (!data.isAdmin) return;
-		const games = await this.prismaService.game.findMany();
+		const games = await this.prismaService.game.findMany({
+			where: { specialtyId: data.specialtyId },
+		});
 		const currentSession: GameSession = JSON.parse(
 			await this.redisService.get('currentGameSession'),
 		);
+
+		if (!currentSession)
+			throw new Prisma.PrismaClientKnownRequestError(
+				'На данный момент нет сессии.',
+				{
+					code: 'C1025',
+					meta: {
+						modelName: 'GameSession',
+					},
+					clientVersion: '5.14.0',
+				},
+			);
 
 		const users = await this.server.in(currentSession.title).fetchSockets();
 
@@ -151,8 +167,6 @@ export class GameGateway {
 	): Promise<void> {
 		const { game, points } = data;
 
-		console.log(game, points);
-
 		const user = await this.prismaService.user.findUniqueOrThrow({
 			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },
 			include: {
@@ -216,8 +230,6 @@ export class GameGateway {
 		this.logger.debug(userAssignmentsCount, userAssignments);
 
 		if (userAssignmentsCount === userAssignments.length) {
-			socket.emit('game:waiting', { isWaiting: true });
-
 			this.logger.debug('Game is waiting', GameGateway.name);
 
 			this.server.emit('game:waiting', {
@@ -247,14 +259,31 @@ export class GameGateway {
 				data: { isStarted: false, isCompleted: true },
 			});
 
+			const users = await this.prismaService.user.findMany({
+				where: {
+					gameSessionId: endedGameSession.id,
+				},
+				select: {
+					id: true,
+					teamName: true,
+					points: true,
+				},
+			});
+
 			await this.redisService.del('currentGameSession');
 
-			socket.emit('game:endGameSession', {
+			await this.prismaService.board.updateMany({
+				where: { isBusy: true },
+				data: { isBusy: false },
+			});
+
+			this.server.emit('game:endGameSession', {
 				isCompleted: endedGameSession.isCompleted,
+				users,
 			});
 
 			// TODO: Очки с пользователями для показа на фронте
-			// TODO: Почему пускает по кругу? !!!!!!!!!!!!!
+			// TODO!!!: Почему пускает по кругу? !!!!!!!!!!!!! (решено костылем)
 			return;
 		}
 

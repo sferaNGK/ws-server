@@ -37,3 +37,4 @@ lerna-debug.log*
 postgres
 redis
 bun.lockb
+todo.md

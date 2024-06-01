@@ -9,6 +9,7 @@ import { MyGameModule } from '@/events/mygame/mygame.module';
 import { AppLoggerModule } from '@/app-logger/app-logger.module';
 import { GameSessionModule } from './session/game-session.module';
 import { UserModule } from './user/user.module';
+import { SpecialtyModule } from '@/specialty/specialty.module';
 
 @Module({
 	imports: [
@@ -25,6 +26,7 @@ import { UserModule } from './user/user.module';
 		AppLoggerModule,
 		GameSessionModule,
 		UserModule,
+		SpecialtyModule,
 	],
 	controllers: [],
 	providers: [],

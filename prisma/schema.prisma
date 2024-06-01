@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x"]
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -38,14 +32,16 @@ model User {
 }
 
 model Game {
-  id    Int    @id @default(autoincrement())
-  title String
-  url   String
-  port  Int?
+  id          Int    @id @default(autoincrement())
+  title       String
+  url         String
+  port        Int?
+  specialtyId Int    @map("specialty_id")
 
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
   gameAssignment GameAssignment[]
+  specialty      Specialty        @relation(fields: [specialtyId], references: [id])
 
   @@map("games")
 }
@@ -60,7 +56,7 @@ model Board {
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
   gameAssignment GameAssignment[]
-  User           User[]
+  user           User[]
 
   @@map("boards")
 }
@@ -97,6 +93,14 @@ model GameAssignment {
   gameSession GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
 
   @@map("game_assignments")
+}
+
+model Specialty {
+  id        Int      @id @default(autoincrement())
+  title     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  games     Game[]
 }
 
 enum Role {

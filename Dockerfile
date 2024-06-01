@@ -1,16 +1,19 @@
-FROM oven/bun:latest
+FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
 COPY package.json ./
 COPY prisma ./prisma
 
-RUN bun install
+RUN npm i
 
 COPY . .
 
+RUN npm run build
+RUN npx prisma generate
+
 #bun prisma db push --accept-data-loss
 
-EXPOSE 3000
+EXPOSE 7171
 
-CMD ["bun", "start:prod"]
+CMD ["npm", "run", "start:prod"]
