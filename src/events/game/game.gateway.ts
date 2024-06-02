@@ -193,24 +193,26 @@ export class GameGateway {
 		const firstGameAssignment = prismaGame.gameAssignment.shift();
 		const gameSessionId = firstGameAssignment.gameSessionId;
 
-		await this.prismaService.gameAssignment.update({
-			where: {
-				id: firstGameAssignment.id,
-			},
-			data: {
-				isCompleted: true,
-			},
-		});
+		const [_, updatedUserWithPoints] = await this.prismaService.$transaction([
+			this.prismaService.gameAssignment.update({
+				where: {
+					id: firstGameAssignment.id,
+				},
+				data: {
+					isCompleted: true,
+				},
+			}),
 
-		const updatedUserWithPoints = await this.prismaService.user.update({
-			where: {
-				id: user.id,
-			},
-			data: {
-				points: user.points + points,
-			},
-			include: { board: true },
-		});
+			this.prismaService.user.update({
+				where: {
+					id: user.id,
+				},
+				data: {
+					points: user.points + points,
+				},
+				include: { board: true },
+			}),
+		]);
 
 		const userAssignmentsCount = await this.prismaService.gameAssignment.count({
 			where: {
@@ -227,8 +229,6 @@ export class GameGateway {
 			},
 		});
 
-		this.logger.debug(userAssignmentsCount, userAssignments);
-
 		if (userAssignmentsCount === userAssignments.length) {
 			this.logger.debug('Game is waiting', GameGateway.name);
 
@@ -236,7 +236,6 @@ export class GameGateway {
 				clientIdPhone: user.clientIdPhone,
 				isWaiting: true,
 			});
-			this.logger.log(userAssignmentsCount, userAssignments, GameGateway.name);
 		}
 
 		const [result, count] = await Promise.all([
@@ -254,36 +253,41 @@ export class GameGateway {
 		]);
 
 		if (result.length === count) {
-			const endedGameSession = await this.prismaService.gameSession.update({
-				where: { id: gameSessionId },
-				data: { isStarted: false, isCompleted: true },
+			await this.prismaService.$transaction(async () => {
+				const endedGameSession = await this.prismaService.gameSession.update({
+					where: { id: gameSessionId },
+					data: { isStarted: false, isCompleted: true },
+				});
+
+				const users = await this.prismaService.user.findMany({
+					where: {
+						gameSessionId: endedGameSession.id,
+					},
+					select: {
+						id: true,
+						teamName: true,
+						points: true,
+					},
+				});
+
+				await this.redisService.del('currentGameSession');
+
+				await this.prismaService.board.updateMany({
+					where: { isBusy: true },
+					data: { isBusy: false },
+				});
+
+				await this.prismaService.user.update({
+					where: { id: user.id },
+					data: { boardId: null },
+				});
+
+				this.server.emit('game:endGameSession', {
+					isCompleted: endedGameSession.isCompleted,
+					users,
+				});
 			});
 
-			const users = await this.prismaService.user.findMany({
-				where: {
-					gameSessionId: endedGameSession.id,
-				},
-				select: {
-					id: true,
-					teamName: true,
-					points: true,
-				},
-			});
-
-			await this.redisService.del('currentGameSession');
-
-			await this.prismaService.board.updateMany({
-				where: { isBusy: true },
-				data: { isBusy: false },
-			});
-
-			this.server.emit('game:endGameSession', {
-				isCompleted: endedGameSession.isCompleted,
-				users,
-			});
-
-			// TODO: Очки с пользователями для показа на фронте
-			// TODO!!!: Почему пускает по кругу? !!!!!!!!!!!!! (решено костылем)
 			return;
 		}
 
@@ -291,23 +295,23 @@ export class GameGateway {
 			where: { isBusy: false, AND: { place: { not: user.board.place } } },
 		});
 
-		await this.prismaService.board.update({
-			where: { id: user.board.id },
-			data: { isBusy: false },
-		});
+		await this.prismaService.$transaction(async () => {
+			await this.prismaService.board.update({
+				where: { id: user.board.id },
+				data: { isBusy: false },
+			});
 
-		await this.prismaService.user.update({
-			where: { id: user.id },
-			data: { board: { connect: { id: newBoard.id } } },
-			include: { board: true },
-		});
+			await this.prismaService.user.update({
+				where: { id: user.id },
+				data: { board: { connect: { id: newBoard.id } } },
+				include: { board: true },
+			});
 
-		await this.prismaService.board.update({
-			where: { id: newBoard.id },
-			data: { isBusy: true },
+			await this.prismaService.board.update({
+				where: { id: newBoard.id },
+				data: { isBusy: true },
+			});
 		});
-
-		this.logger.debug(newBoard, GameGateway.name);
 
 		socket.emit('game:end', { isStarted: false });
 		this.server.emit('game:newBoard', {

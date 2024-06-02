@@ -22,7 +22,7 @@
     "dev": "bun start:dev"
   },
   "prisma": {
-    "seed": "ts-node ./prisma/seed/index.ts"
+    "seed": "npx ts-node ./prisma/seed/index.ts"
   },
   "dependencies": {
     "@golevelup/ts-jest": "^0.5.0",
