@@ -153,6 +153,14 @@ export class GameGateway {
 
 			const game = user.gameAssignment.shift().game;
 			this.logger.debug(game, GameGateway.name);
+
+			//TODO: отправить игру на клиент в случае ВР
+
+			this.server.emit('game:start', {
+				isStarted: updatedGameSession.isStarted,
+				game,
+				clientIdPhone: socket.handshake.query.clientIdPhone as string,
+			});
 			socket.emit('game:start', {
 				isStarted: updatedGameSession.isStarted,
 				game,
