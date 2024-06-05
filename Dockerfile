@@ -2,18 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-COPY package.json ./
+COPY package.json package-lock.json ./
 COPY prisma ./prisma
 
-RUN npm i
+RUN npm install
 
 COPY . .
 
 RUN npm run build
 RUN npx prisma generate
 
-#bun prisma db push --accept-data-loss
-
 EXPOSE 7171
 
-CMD ["npm", "run", "start:prod"]
+CMD ["sh", "-c", "npx prisma migrate reset --force && npm run start:prod"]
