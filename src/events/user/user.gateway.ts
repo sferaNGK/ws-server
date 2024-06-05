@@ -96,16 +96,34 @@ export class UserGateway implements OnModuleInit {
 				const [assignments, completed] =
 					await this.userService.getUserAssignments(user.id);
 
+				const [completedAssignments, totalAssignments] =
+					await this.userService.getResultCount();
+
 				if (assignments.length > 0 && assignments.length === completed) {
 					this.server.emit('game:waiting', {
 						clientIdPhone: user.clientIdPhone,
 						isWaiting: true,
 					});
+				} else if (
+					completedAssignments.length > 0 &&
+					completedAssignments.length === totalAssignments
+				) {
+					const users =
+						await this.userService.getUsersByCurrentCompletedGameSession();
+
+					if (users.length === 0) return;
+
+					console.log(users);
+
+					this.server.emit('game:endGameSession', {
+						isCompleted: true,
+						users,
+					});
 				} else {
 					this.server.emit('user:reconnect', user);
 				}
 
-				// TODO: итоги, если телефон закрыт
+				// TODO: итоги, если телефон закрыт (а нужно ли?)
 			}
 		});
 	}

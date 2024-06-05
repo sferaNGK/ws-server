@@ -3,7 +3,13 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
 import { AppLogger } from '@/app-logger/app-logger';
 import { RegisterTeamData, VerifyCodeData, VerifyCodeResult } from '@/types';
-import { Prisma, User, Board, GameSession } from '@prisma/client';
+import {
+	Prisma,
+	User,
+	Board,
+	GameSession,
+	GameAssignment,
+} from '@prisma/client';
 
 @Injectable()
 export class UserGatewayService {
@@ -99,7 +105,6 @@ export class UserGatewayService {
 		client,
 	}: VerifyCodeData): Promise<VerifyCodeResult> {
 		// TODO: если у пользователя есть игра, то нужно ему кинуть ее и смотреть на одну свободную доску! (? kak)
-		// TODO: сделать разбив по специальностям
 
 		const gameSession: GameSession = JSON.parse(
 			await this.redisService.get('currentGameSession'),
@@ -235,5 +240,53 @@ export class UserGatewayService {
 				where: { userId, isCompleted: true },
 			}),
 		]);
+	}
+
+	async getResultCount(): Promise<[GameAssignment[], number]> {
+		const gameSessionId = (
+			await this.prismaService.gameSession.findFirst({
+				where: {
+					title: await this.redisService.get('currentGameSession'),
+				},
+			})
+		)?.id;
+		return Promise.all([
+			this.prismaService.gameAssignment.findMany({
+				where: {
+					gameSessionId,
+					isCompleted: true,
+				},
+			}),
+			this.prismaService.gameAssignment.count({
+				where: {
+					gameSessionId,
+				},
+			}),
+		]);
+	}
+
+	async getUsersByCurrentCompletedGameSession(): Promise<User[]> {
+		const gameSessionId = (
+			await this.prismaService.gameSession.findFirst({
+				where: {
+					title: await this.redisService.get('currentGameSession'),
+				},
+			})
+		)?.id;
+
+		if (!gameSessionId) {
+			return [];
+		}
+
+		return this.prismaService.user.findMany({
+			where: {
+				gameAssignment: {
+					every: {
+						isCompleted: true,
+						gameSessionId,
+					},
+				},
+			},
+		});
 	}
 }

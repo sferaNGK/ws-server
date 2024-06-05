@@ -175,8 +175,6 @@ export class GameGateway {
 	): Promise<void> {
 		const { game, points } = data;
 
-		console.log(game);
-
 		const user = await this.prismaService.user.findUniqueOrThrow({
 			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },
 			include: {

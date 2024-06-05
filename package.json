@@ -9,9 +9,10 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start:dev": "NODE_ENV=dev nest start --watch",
+    "start:dev-home": "NODE_ENV=home-dev nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/src/main.js",
+    "start:prod": "NODE_ENV=prod node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -19,10 +20,11 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:reset": "bunx prisma db push --force-reset --skip-generate",
-    "dev": "bun start:dev"
+    "dev": "bun start:dev-home",
+    "prisma:seed-home": "NODE_ENV=dev-home npx ts-node ./prisma/seed/index.ts"
   },
   "prisma": {
-    "seed": "npx ts-node ./prisma/seed/index.ts"
+    "seed": "NODE_ENV=dev npx ts-node ./prisma/seed/index.ts"
   },
   "dependencies": {
     "@golevelup/ts-jest": "^0.5.0",
