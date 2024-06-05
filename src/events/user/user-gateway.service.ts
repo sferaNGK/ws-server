@@ -213,4 +213,14 @@ export class UserGatewayService {
 			};
 		}
 	}
+
+	async getUserByClientId(
+		clientIdPhone: string,
+		relations: Prisma.UserInclude = {},
+	): Promise<User> {
+		return this.prismaService.user.findUnique({
+			where: { clientIdPhone },
+			include: relations,
+		});
+	}
 }

@@ -156,11 +156,11 @@ export class GameGateway {
 
 			//TODO: отправить игру на клиент в случае ВР
 
-			this.server.emit('game:start', {
-				isStarted: updatedGameSession.isStarted,
-				game,
-				clientIdPhone: socket.handshake.query.clientIdPhone as string,
-			});
+			// this.server.emit('game:start', {
+			// 	isStarted: updatedGameSession.isStarted,
+			// 	game,
+			// 	clientIdPhone: socket.handshake.query.clientIdPhone as string,
+			// });
 			socket.emit('game:start', {
 				isStarted: updatedGameSession.isStarted,
 				game,
@@ -174,6 +174,8 @@ export class GameGateway {
 		@MessageBody() data: GameEndData,
 	): Promise<void> {
 		const { game, points } = data;
+
+		console.log(game);
 
 		const user = await this.prismaService.user.findUniqueOrThrow({
 			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },

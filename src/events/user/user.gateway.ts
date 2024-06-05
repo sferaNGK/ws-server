@@ -73,7 +73,7 @@ export class UserGateway implements OnModuleInit {
 	}
 
 	onModuleInit(): any {
-		this.server.on('connect', (client: Socket) => {
+		this.server.on('connect', async (client: Socket) => {
 			this.logger.debug(
 				'User connected: ' +
 					[
@@ -84,6 +84,14 @@ export class UserGateway implements OnModuleInit {
 					].join(' '),
 				UserGateway.name,
 			);
+			const clientIdPhone = client.handshake.query.clientIdPhone as string;
+			if (clientIdPhone) {
+				this.logger.log('reconnected');
+				const user = await this.userService.getUserByClientId(clientIdPhone, {
+					board: true,
+				});
+				this.server.emit('user:reconnect', user);
+			}
 		});
 	}
 }

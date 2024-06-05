@@ -17,7 +17,7 @@ async function bootstrap() {
 		origin: '*',
 	});
 
-	await app.listen(7171, '192.168.1.108');
+	await app.listen(7171, '0.0.0.0');
 }
 
 bootstrap();
