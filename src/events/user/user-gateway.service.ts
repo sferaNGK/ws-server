@@ -99,7 +99,6 @@ export class UserGatewayService {
 		client,
 	}: VerifyCodeData): Promise<VerifyCodeResult> {
 		// TODO: если у пользователя есть игра, то нужно ему кинуть ее и смотреть на одну свободную доску! (? kak)
-		// TODO: сделать разбив по специальностям
 
 		const gameSession: GameSession = JSON.parse(
 			await this.redisService.get('currentGameSession'),
@@ -196,16 +195,17 @@ export class UserGatewayService {
 					},
 				});
 
-			this.logger.log(
-				updatedGameAssignment,
-				client.handshake.query.clientIdBoard,
-				UserGatewayService.name,
-			);
+			// this.logger.log(
+			// 	updatedGameAssignment,
+			// 	client.handshake.query.clientIdBoard,
+			// 	UserGatewayService.name,
+			// );
 
 			return {
 				success: updatedUser.isVerified,
 				game: updatedGameAssignment.game,
 				isSessionStarted: prismaGameSession.isStarted,
+				user: updatedUser,
 			};
 		} else {
 			return {

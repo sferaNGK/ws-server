@@ -11,7 +11,7 @@ import { Game, GameSession, Prisma } from '@prisma/client';
 import { RedisService } from '@/redis/redis.service';
 import { CreateGameSessionData, GameEndData } from '@/types';
 import { AppLogger } from '@/app-logger/app-logger';
-import { UseFilters } from '@nestjs/common';
+import { Logger, UseFilters } from '@nestjs/common';
 import { PrismaClientExceptionFilter } from '@/filters';
 import { shuffle } from '@/utils';
 
@@ -113,7 +113,7 @@ export class GameGateway {
 							userId: user.id,
 							gameId: game.id,
 							gameSessionId: currentSession.id,
-							boardId: 4,
+							boardId: 1, // TODO: вернуть на 4
 						},
 					});
 				} else {
@@ -156,11 +156,13 @@ export class GameGateway {
 
 			//TODO: отправить игру на клиент в случае ВР
 
-			this.server.emit('game:start', {
-				isStarted: updatedGameSession.isStarted,
-				game,
-				clientIdPhone: socket.handshake.query.clientIdPhone as string,
-			});
+			// if (game.url === 'VR') {
+			// 	this.server.emit('game:VR', {
+			// 		game,
+			// 		clientIdPhone: user.clientIdPhone,
+			// 	});
+			// }
+
 			socket.emit('game:start', {
 				isStarted: updatedGameSession.isStarted,
 				game,
@@ -175,8 +177,18 @@ export class GameGateway {
 	): Promise<void> {
 		const { game, points } = data;
 
+		const clientIdPhone = socket.handshake.query.clientIdPhone as string;
+		const clientIdBoard = socket.handshake.query.clientIdBoard as string;
+
+		if (game.url === 'VR') {
+			this.server.emit('game:end', {
+				isStarted: false,
+				clientIdBoard,
+			});
+		}
+
 		const user = await this.prismaService.user.findUniqueOrThrow({
-			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },
+			where: clientIdPhone ? { clientIdPhone } : { clientIdBoard },
 			include: {
 				board: true,
 			},
@@ -299,32 +311,62 @@ export class GameGateway {
 			return;
 		}
 
-		const newBoard = await this.prismaService.board.findFirstOrThrow({
-			where: { isBusy: false, AND: { place: { not: user.board.place } } },
-		});
+		// this.logger.debug(userAssignments);
 
-		await this.prismaService.$transaction(async () => {
-			await this.prismaService.board.update({
-				where: { id: user.board.id },
-				data: { isBusy: false },
+		const nextGameAssignment =
+			await this.prismaService.gameAssignment.findFirst({
+				where: {
+					gameSessionId,
+					isCompleted: false,
+					userId: user.id,
+				},
+				include: {
+					user: true,
+					game: true,
+					board: true,
+				},
 			});
 
+		if (nextGameAssignment.game.url === 'VR') {
 			await this.prismaService.user.update({
 				where: { id: user.id },
-				data: { board: { connect: { id: newBoard.id } } },
-				include: { board: true },
+				data: { board: { connect: { id: nextGameAssignment.board.id } } },
 			});
 
-			await this.prismaService.board.update({
-				where: { id: newBoard.id },
-				data: { isBusy: true },
+			this.logger.debug('ZXZVZXCVXZ');
+
+			this.server.emit('game:newBoard', {
+				clientIdPhone: user.clientIdPhone,
+				board: nextGameAssignment.board,
 			});
-		});
+		} else {
+			const newBoard = await this.prismaService.board.findFirstOrThrow({
+				where: { isBusy: false },
+			});
+
+			await this.prismaService.$transaction(async () => {
+				await this.prismaService.board.update({
+					where: { id: user.board.id },
+					data: { isBusy: false },
+				});
+
+				await this.prismaService.user.update({
+					where: { id: user.id },
+					data: { board: { connect: { id: newBoard.id } } },
+				});
+
+				await this.prismaService.board.update({
+					where: { id: newBoard.id },
+					data: { isBusy: true },
+				});
+			});
+
+			this.server.emit('game:newBoard', {
+				clientIdPhone: user.clientIdPhone,
+				board: newBoard,
+			});
+		}
 
 		socket.emit('game:end', { isStarted: false });
-		this.server.emit('game:newBoard', {
-			clientIdPhone: user.clientIdPhone,
-			board: newBoard,
-		});
 	}
 }

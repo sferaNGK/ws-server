@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { Game } from '@prisma/client';
+import { Game, User } from '@prisma/client';
 
 export interface CreateGameSessionData {
 	isAdmin: boolean;
@@ -32,6 +32,7 @@ interface VerifyCodeFailure {
 	success: boolean;
 	game: Game;
 	isSessionStarted: boolean;
+	user: User;
 }
 
 type VerifyCodeResult = VerifyCodeSuccess | VerifyCodeFailure;

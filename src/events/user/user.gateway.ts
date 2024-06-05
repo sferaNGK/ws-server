@@ -65,6 +65,14 @@ export class UserGateway implements OnModuleInit {
 				success: true,
 				isSessionStarted: verifyResult?.isSessionStarted,
 			});
+
+			if (verifyResult.game.url === 'VR') {
+				this.server.emit('game:VR', {
+					game: verifyResult.game,
+					clientIdPhone: verifyResult.user.clientIdPhone,
+					clientIdBoard: verifyResult.user.clientIdBoard,
+				});
+			}
 		} else {
 			client.emit('user:verifyCode', {
 				success: verifyResult,
