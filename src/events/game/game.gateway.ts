@@ -113,7 +113,7 @@ export class GameGateway {
 							userId: user.id,
 							gameId: game.id,
 							gameSessionId: currentSession.id,
-							boardId: 1, // TODO: вернуть на 4
+							boardId: 4, // TODO: вернуть на 4
 						},
 					});
 				} else {
@@ -156,12 +156,29 @@ export class GameGateway {
 
 			//TODO: отправить игру на клиент в случае ВР
 
-			// if (game.url === 'VR') {
-			// 	this.server.emit('game:VR', {
-			// 		game,
-			// 		clientIdPhone: user.clientIdPhone,
-			// 	});
-			// }
+			if (game.url === 'VR') {
+				this.server.emit('game:VR', {
+					game,
+					clientIdPhone: user.clientIdPhone,
+				});
+
+				const userWithNewBoard = await this.prismaService.user.update({
+					where: {
+						id: user.id,
+					},
+					data: {
+						boardId: 4,
+					},
+					include: {
+						board: true,
+					},
+				});
+
+				this.server.emit('game:newBoard', {
+					clientIdPhone: user.clientIdPhone,
+					board: userWithNewBoard.board,
+				});
+			}
 
 			socket.emit('game:start', {
 				isStarted: updatedGameSession.isStarted,
@@ -367,6 +384,6 @@ export class GameGateway {
 			});
 		}
 
-		socket.emit('game:end', { isStarted: false });
+		socket.emit('game:end', { isStarted: false, clientIdBoard: clientIdBoard });
 	}
 }

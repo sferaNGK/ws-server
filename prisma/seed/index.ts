@@ -26,21 +26,21 @@ async function main(isHome = false) {
 				place: 2,
 				isBusy: false,
 			},
-			// {
-			// 	ip: isHome ? homeIP[0] : sphereIP[2],
-			// 	place: 3,
-			// 	isBusy: false,
-			// },
-			// {
-			// 	ip: isHome ? homeIP[1] : sphereIP[3],
-			// 	place: 4,
-			// 	isBusy: false,
-			// },
-			// {
-			// 	ip: isHome ? homeIP[1] : sphereIP[4],
-			// 	place: 5,
-			// 	isBusy: false,
-			// },
+			{
+				ip: isHome ? homeIP[0] : sphereIP[2],
+				place: 3,
+				isBusy: false,
+			},
+			{
+				ip: isHome ? homeIP[1] : sphereIP[3],
+				place: 4,
+				isBusy: false,
+			},
+			{
+				ip: isHome ? homeIP[1] : sphereIP[4],
+				place: 5,
+				isBusy: false,
+			},
 		],
 	});
 
@@ -114,7 +114,7 @@ async function main(isHome = false) {
 	await prisma.$transaction([board, specialities, games]);
 }
 
-main(true)
+main()
 	.then(async () => {
 		await prisma.$disconnect();
 	})
