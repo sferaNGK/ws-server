@@ -90,7 +90,22 @@ export class UserGateway implements OnModuleInit {
 				const user = await this.userService.getUserByClientId(clientIdPhone, {
 					board: true,
 				});
-				this.server.emit('user:reconnect', user);
+
+				if (!user) return;
+
+				const [assignments, completed] =
+					await this.userService.getUserAssignments(user.id);
+
+				if (assignments.length > 0 && assignments.length === completed) {
+					this.server.emit('game:waiting', {
+						clientIdPhone: user.clientIdPhone,
+						isWaiting: true,
+					});
+				} else {
+					this.server.emit('user:reconnect', user);
+				}
+
+				// TODO: итоги, если телефон закрыт
 			}
 		});
 	}

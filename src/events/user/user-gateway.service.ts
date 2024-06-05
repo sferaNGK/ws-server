@@ -223,4 +223,17 @@ export class UserGatewayService {
 			include: relations,
 		});
 	}
+
+	async getUserAssignments(userId: number) {
+		return this.prismaService.$transaction([
+			this.prismaService.gameAssignment.findMany({
+				where: {
+					userId,
+				},
+			}),
+			this.prismaService.gameAssignment.count({
+				where: { userId, isCompleted: true },
+			}),
+		]);
+	}
 }
