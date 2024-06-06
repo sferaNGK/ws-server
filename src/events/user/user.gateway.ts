@@ -122,8 +122,6 @@ export class UserGateway implements OnModuleInit {
 				} else {
 					this.server.emit('user:reconnect', user);
 				}
-
-				// TODO: итоги, если телефон закрыт (а нужно ли?)
 			}
 		});
 	}
