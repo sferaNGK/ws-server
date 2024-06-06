@@ -7,7 +7,7 @@ const sphereIP = [
 	'192.168.1.158',
 	'192.168.1.245',
 	'192.168.1.15',
-	'192.168.1.108',
+	'192.168.10.2',
 ];
 
 const homeIP = ['192.168.1.124', '192.168.1.238'];
@@ -48,16 +48,21 @@ async function main() {
 					place: 3,
 					isBusy: false,
 				},
+				// {
+				// 	ip: sphereIP[3],
+				// 	place: 4,
+				// 	isBusy: false,
+				// },
 				{
 					ip: sphereIP[3],
-					place: 4,
-					isBusy: false,
-				},
-				{
-					ip: sphereIP[4],
 					place: 5,
 					isBusy: false,
 				},
+				// {
+				// 	ip: sphereIP[4],
+				// 	place: 6,
+				// 	isBusy: false,
+				// },
 			],
 		});
 	}
@@ -97,17 +102,17 @@ async function main() {
 			},
 			{
 				title: 'Ситуации | детская психология',
-				url: 'http://192.168.1.108:1777/game/1',
+				url: 'http://192.168.1.108:8080/game/1',
 				specialtyId: 2,
 			},
 			{
 				title: 'Ситуации | педагогические ситуации',
-				url: 'http://192.168.1.108:1777/game/2',
+				url: 'http://192.168.1.108:8080/game/2',
 				specialtyId: 2,
 			},
 			{
 				title: 'Ситуации | языки программирования',
-				url: 'http://192.168.1.108:1777/game/3',
+				url: 'http://192.168.1.108:8080/game/3',
 				specialtyId: 1,
 			},
 			{
