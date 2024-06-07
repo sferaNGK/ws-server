@@ -10,6 +10,8 @@ import { AppLoggerModule } from '@/app-logger/app-logger.module';
 import { GameSessionModule } from './session/game-session.module';
 import { UserModule } from './user/user.module';
 import { SpecialtyModule } from '@/specialty/specialty.module';
+import { DockerModule } from './docker/docker.module';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
 	imports: [
@@ -27,6 +29,8 @@ import { SpecialtyModule } from '@/specialty/specialty.module';
 		GameSessionModule,
 		UserModule,
 		SpecialtyModule,
+		DockerModule,
+		BullModule.forRoot({ redis: { host: 'localhost', port: 6379 } }),
 	],
 	controllers: [],
 	providers: [],

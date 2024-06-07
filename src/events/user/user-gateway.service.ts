@@ -250,6 +250,9 @@ export class UserGatewayService {
 				},
 			})
 		)?.id;
+
+		if (!gameSessionId) return;
+
 		return Promise.all([
 			this.prismaService.gameAssignment.findMany({
 				where: {

@@ -82,22 +82,22 @@ async function main() {
 		data: [
 			{
 				title: 'Сортер комплектующие',
-				url: 'http://192.168.1.108:1888/game/1',
+				url: 'http://192.168.1.108:8081/game/1',
 				specialtyId: 1,
 			},
 			{
 				title: 'Сортер программист',
-				url: 'http://192.168.1.108:1888/game/2',
+				url: 'http://192.168.1.108:8081/game/2',
 				specialtyId: 1,
 			},
 			{
 				title: 'Сортер распорядок',
-				url: 'http://192.168.1.108:1888/game/3',
+				url: 'http://192.168.1.108:8081/game/3',
 				specialtyId: 2,
 			},
 			{
 				title: 'Сортер качества воспитателя',
-				url: 'http://192.168.1.108:1888/game/4',
+				url: 'http://192.168.1.108:8081/game/4',
 				specialtyId: 2,
 			},
 			{
