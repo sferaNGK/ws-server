@@ -27,6 +27,9 @@
     "seed": "cross-env NODE_ENV=dev npx ts-node ./prisma/seed/index.ts"
   },
   "dependencies": {
+    "@bull-board/api": "^5.20.1",
+    "@bull-board/fastify": "^5.20.1",
+    "@bull-board/nestjs": "^5.20.1",
     "@golevelup/ts-jest": "^0.5.0",
     "@nestjs/bull": "^10.1.1",
     "@nestjs/cli": "^10.0.0",
