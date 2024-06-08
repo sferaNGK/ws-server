@@ -113,8 +113,6 @@ export class UserGateway implements OnModuleInit {
 
 					if (users.length === 0) return;
 
-					console.log(users);
-
 					this.server.emit('game:endGameSession', {
 						isCompleted: true,
 						users,

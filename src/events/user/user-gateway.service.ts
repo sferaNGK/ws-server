@@ -278,7 +278,7 @@ export class UserGatewayService {
 		)?.id;
 
 		if (!gameSessionId) {
-			return [];
+			return;
 		}
 
 		return this.prismaService.user.findMany({
