@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import * as Docker from 'dockerode';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { fromEvent, map, Observable } from 'rxjs';
 
 @Injectable()
 export class DockerService {
@@ -36,8 +37,9 @@ export class DockerService {
 		}));
 	}
 
-	async startComposeContainer(imageName: string) {
-		const composedContainers = await this.getContainersWithImageName(imageName);
+	async startComposeContainer(projectName: string) {
+		const composedContainers =
+			await this.getContainersWithProjectName(projectName);
 
 		await this.dockerQueue.add('start-compose-containers', composedContainers, {
 			attempts: 3,
@@ -46,8 +48,9 @@ export class DockerService {
 		return { success: true, message: 'Контейнеры запущены.' };
 	}
 
-	async stopComposeContainer(imageName: string) {
-		const composedContainers = await this.getContainersWithImageName(imageName);
+	async stopComposeContainer(projectName: string) {
+		const composedContainers =
+			await this.getContainersWithProjectName(projectName);
 
 		await this.dockerQueue.add('stop-compose-containers', composedContainers, {
 			attempts: 3,
@@ -59,55 +62,43 @@ export class DockerService {
 	async getLogsFromContainer(containerId: string) {
 		const container = this.docker.getContainer(containerId);
 
-		return new Promise<AsyncIterable<string>>((resolve, reject) => {
+		const oneHourAgo = new Date(Date.now() - 60 * 60 * 5000)
+			.getTime()
+			.toString()
+			.slice(0, -3);
+
+		return new Observable<string>((subscriber) => {
 			container.logs(
 				{
 					stdout: true,
 					stderr: true,
 					follow: true,
 					timestamps: true,
+					since: oneHourAgo,
 				},
-				(err, stream) => {
+				(err, logStream) => {
 					if (err) {
-						reject(err);
+						subscriber.error(err);
 					} else {
-						resolve(this.streamToAsyncIterable(stream));
+						fromEvent(logStream, 'data')
+							.pipe(map((data) => data.toString()))
+							.subscribe(subscriber);
+
+						logStream.on('end', () => {
+							subscriber.complete();
+						});
 					}
 				},
 			);
 		});
 	}
 
-	private streamToAsyncIterable(
-		stream: NodeJS.ReadableStream,
-	): AsyncIterable<string> {
-		return {
-			[Symbol.asyncIterator](): AsyncIterator<string> {
-				return {
-					next(): Promise<IteratorResult<string>> {
-						return new Promise((resolve, reject) => {
-							stream.once('data', (chunk) => {
-								resolve({ value: chunk.toString(), done: false });
-							});
-							stream.once('end', () => {
-								resolve({ done: true, value: undefined });
-							});
-							stream.once('error', (err) => {
-								reject(err);
-							});
-						});
-					},
-				};
-			},
-		};
-	}
-
-	private async getContainersWithImageName(imageName: string) {
+	private async getContainersWithProjectName(projectName: string) {
 		const containers = await this.getAllContainers();
 
 		const composedContainers = containers.filter(
 			(container) =>
-				container.Labels['com.docker.compose.project'] === imageName,
+				container.Labels['com.docker.compose.project'] === projectName,
 		);
 
 		if (composedContainers.length === 0)

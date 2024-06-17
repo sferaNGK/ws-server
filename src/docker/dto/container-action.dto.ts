@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
 
-export class StartContainerDto {
+export class ContainerActionDto {
 	@IsString()
-	imageName: string;
+	projectName: string;
 }

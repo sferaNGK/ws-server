@@ -7,7 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { DockerService } from '@/docker/docker.service';
 import { Server, Socket } from 'socket.io';
-import { ContainerLogsDto } from '@/docker/dto/container-logs.dto';
+import { ContainerLogsDto } from '@/docker/dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class DockerGateway {
@@ -26,8 +26,9 @@ export class DockerGateway {
 
 		const logStream =
 			await this.dockerService.getLogsFromContainer(containerId);
-		for await (const log of logStream) {
-			this.server.to(containerId).emit('docker:streamLogs', log);
-		}
+
+		logStream.subscribe((data) => {
+			this.server.to(containerId).emit('docker:streamLogs', data);
+		});
 	}
 }

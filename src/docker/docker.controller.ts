@@ -6,8 +6,8 @@ import {
 	HttpStatus,
 	Post,
 } from '@nestjs/common';
-import { DockerService } from './docker.service';
-import { StartContainerDto } from '@/docker/dto';
+import { DockerService } from '@/docker/docker.service';
+import { ContainerActionDto } from '@/docker/dto';
 
 @Controller('dockerode')
 export class DockerController {
@@ -20,15 +20,15 @@ export class DockerController {
 
 	@HttpCode(HttpStatus.OK)
 	@Post('start')
-	async startComposeContainer(@Body() body: StartContainerDto) {
-		const { imageName } = body;
-		return this.dockerService.startComposeContainer(imageName);
+	async startComposeContainer(@Body() body: ContainerActionDto) {
+		const { projectName } = body;
+		return this.dockerService.startComposeContainer(projectName);
 	}
 
 	@HttpCode(HttpStatus.OK)
 	@Post('stop')
-	async stopComposeContainer(@Body() body: StartContainerDto) {
-		const { imageName } = body;
-		return this.dockerService.stopComposeContainer(imageName);
+	async stopComposeContainer(@Body() body: ContainerActionDto) {
+		const { projectName } = body;
+		return this.dockerService.stopComposeContainer(projectName);
 	}
 }
