@@ -12,9 +12,9 @@ import { DockerModule } from './docker/docker.module';
 import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { FastifyAdapter } from '@bull-board/fastify';
-import { CacheModule, CacheStore } from '@nestjs/cache-manager';
+import { CacheModule } from '@nestjs/cache-manager';
 import type { RedisClientOptions } from 'redis';
-import { redisStore } from 'cache-manager-redis-store';
+import { redisStore } from 'cache-manager-redis-yet';
 
 @Module({
 	imports: [
@@ -28,9 +28,13 @@ import { redisStore } from 'cache-manager-redis-store';
 			imports: [ConfigModule],
 			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
-				store: redisStore as unknown as CacheStore,
-				host: configService.get<string>('REDIS_HOST'),
-				port: configService.get<number>('REDIS_PORT'),
+				store: redisStore,
+				socket: {
+					host: configService.get<string>('REDIS_HOST'),
+					port: configService.get<number>('REDIS_PORT'),
+				},
+				username: configService.get<string>('REDIS_USER'),
+				password: configService.get<string>('REDIS_PASSWORD'),
 			}),
 			isGlobal: true,
 		}),
@@ -48,6 +52,8 @@ import { redisStore } from 'cache-manager-redis-store';
 				redis: {
 					host: configService.get<string>('REDIS_HOST'),
 					port: configService.get<number>('REDIS_PORT'),
+					username: configService.get<string>('REDIS_USER'),
+					password: configService.get<string>('REDIS_PASSWORD'),
 				},
 			}),
 		}),
