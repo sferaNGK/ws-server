@@ -175,6 +175,8 @@ export class GameGateway {
 	): Promise<void> {
 		const { game, points } = data;
 
+		if (!game || !points) return;
+
 		const user = await this.prismaService.user.findUniqueOrThrow({
 			where: { clientIdBoard: socket.handshake.query.clientIdBoard as string },
 			include: {
@@ -277,8 +279,8 @@ export class GameGateway {
 						points: true,
 					},
 				});
-
-				await this.redisService.del('currentGameSession');
+				// TODO: под вопросом?
+				// await this.redisService.del('currentGameSession');
 
 				await this.prismaService.board.updateMany({
 					where: { isBusy: true },

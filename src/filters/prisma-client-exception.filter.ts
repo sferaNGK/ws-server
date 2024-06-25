@@ -13,6 +13,8 @@ export class PrismaClientExceptionFilter<T> implements ExceptionFilter {
 
 		console.log(error.message, error.code, error.meta);
 
+		if (!error.meta) return;
+
 		client.emit(ctx.getPattern(), {
 			error: e(error.meta['modelName'] as string, error.code),
 		});

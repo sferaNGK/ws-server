@@ -104,8 +104,6 @@ export class UserGatewayService {
 		ip,
 		client,
 	}: VerifyCodeData): Promise<VerifyCodeResult> {
-		// TODO: если у пользователя есть игра, то нужно ему кинуть ее и смотреть на одну свободную доску! (? kak)
-
 		const gameSession: GameSession = JSON.parse(
 			await this.redisService.get('currentGameSession'),
 		);
@@ -243,15 +241,7 @@ export class UserGatewayService {
 	}
 
 	async getResultCount(): Promise<[GameAssignment[], number]> {
-		const gameSessionId = (
-			await this.prismaService.gameSession.findFirst({
-				where: {
-					title: await this.redisService.get('currentGameSession'),
-				},
-			})
-		)?.id;
-
-		if (!gameSessionId) return;
+		const { id: gameSessionId } = await this.getCurrentGameSession();
 
 		return Promise.all([
 			this.prismaService.gameAssignment.findMany({
@@ -269,17 +259,9 @@ export class UserGatewayService {
 	}
 
 	async getUsersByCurrentCompletedGameSession(): Promise<User[]> {
-		const gameSessionId = (
-			await this.prismaService.gameSession.findFirst({
-				where: {
-					title: await this.redisService.get('currentGameSession'),
-				},
-			})
-		)?.id;
+		const { id: gameSessionId } = await this.getCurrentGameSession();
 
-		if (!gameSessionId) {
-			return;
-		}
+		if (!gameSessionId) return;
 
 		return this.prismaService.user.findMany({
 			where: {
@@ -289,6 +271,18 @@ export class UserGatewayService {
 						gameSessionId,
 					},
 				},
+			},
+		});
+	}
+
+	private async getCurrentGameSession() {
+		const gameSession = JSON.parse(
+			await this.redisService.get('currentGameSession'),
+		) as GameSession;
+
+		return this.prismaService.gameSession.findFirst({
+			where: {
+				title: gameSession?.title,
 			},
 		});
 	}

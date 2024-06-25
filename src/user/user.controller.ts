@@ -1,26 +1,30 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+	Body,
+	Controller,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Post,
+} from '@nestjs/common';
 import { UserService } from '@/user/user.service';
-import { TeamnameCheckDto } from '@/user/dto';
-import { FastifyReply } from 'fastify';
-import { AddPointsDto } from '@/user/dto/add-points.dto';
+import { TeamNameCheckDto } from '@/user/dto';
+import { UserCheckResponse } from '@/user/interface';
 
 @Controller('user')
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@Post('check')
+	@HttpCode(HttpStatus.OK)
 	async checkTeamName(
-		@Body() data: TeamnameCheckDto,
-		@Res() response: FastifyReply,
-	): Promise<void> {
-		response.code(200).send(await this.userService.checkTeamName(data));
+		@Body() data: TeamNameCheckDto,
+	): Promise<UserCheckResponse> {
+		return this.userService.checkTeamName(data);
 	}
 
-	@Post('points')
-	async addPoints(
-		@Body() data: AddPointsDto,
-		@Res() response: FastifyReply,
-	): Promise<void> {
-		response.code(200).send(await this.userService.addPoints(data));
+	@Get('current-session')
+	@HttpCode(HttpStatus.OK)
+	async getUsersInCurrentSession() {
+		return this.userService.getUsersInCurrentSession();
 	}
 }

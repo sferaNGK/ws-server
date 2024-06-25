@@ -1,13 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { TeamnameCheckDto } from '@/user/dto';
-import { AddPointsDto } from '@/user/dto/add-points.dto';
+import { TeamNameCheckDto } from '@/user/dto';
+import { UserCheckResponse } from '@/user/interface';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { GameSession } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prismaService: PrismaService) {}
+	constructor(
+		private readonly prismaService: PrismaService,
+		@Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+	) {}
 
-	async checkTeamName({ teamName }: TeamnameCheckDto) {
+	async checkTeamName({
+		teamName,
+	}: TeamNameCheckDto): Promise<UserCheckResponse> {
 		const user = await this.prismaService.user.findFirst({
 			where: { teamName },
 		});
@@ -17,50 +25,27 @@ export class UserService {
 		return { success: true };
 	}
 
-	async addPoints({ teamName, points, users }: AddPointsDto) {
-		return this.prismaService.$transaction(async (prisma) => {
-			if (users) {
-				const prismaUsers = [];
-				for (const user of users) {
-					const prismaUser = await prisma.user.findFirst({
-						where: { teamName: user.teamName },
-					});
+	async getUsersInCurrentSession() {
+		const currentSession =
+			await this.cacheManager.get<GameSession>('currentGameSession');
 
-					if (!prismaUser) throw new NotFoundException('Команда не найдена.');
+		if (!currentSession) throw new NotFoundException('Сессия не найдена.');
 
-					prismaUsers.push(
-						await prisma.user.update({
-							where: { id: prismaUser.id },
-							data: { points: prismaUser.points + user.points },
-							select: {
-								id: true,
-								teamName: true,
-								points: true,
-							},
-						}),
-					);
-				}
-
-				return { success: true, users: prismaUsers };
-			} else {
-				const user = await prisma.user.findFirst({
-					where: { teamName },
-				});
-
-				if (!user) throw new NotFoundException('Команда не найдена.');
-
-				const updatedUser = await prisma.user.update({
-					where: { id: user.id },
-					data: { points: user.points + points },
-					select: {
-						id: true,
-						teamName: true,
-						points: true,
-					},
-				});
-
-				return { success: true, user: updatedUser };
-			}
+		const users = await this.prismaService.user.findMany({
+			where: {
+				gameSessionId: currentSession.id,
+			},
+			select: {
+				teamName: true,
+				points: true,
+			},
 		});
+
+		if (users.length === 0)
+			throw new NotFoundException('Пользователи не найдены.');
+
+		await this.cacheManager.del('currentGameSession');
+
+		return users;
 	}
 }

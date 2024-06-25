@@ -117,7 +117,7 @@ async function main() {
 			},
 			{
 				title: 'Робот',
-				url: 'http://192.168.1.108:1999',
+				url: 'http://192.168.1.108:8082',
 				specialtyId: 1,
 			},
 			// {

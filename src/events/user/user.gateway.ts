@@ -104,7 +104,9 @@ export class UserGateway implements OnModuleInit {
 						clientIdPhone: user.clientIdPhone,
 						isWaiting: true,
 					});
-				} else if (
+				}
+
+				if (
 					completedAssignments.length > 0 &&
 					completedAssignments.length === totalAssignments
 				) {
