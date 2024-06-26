@@ -3,13 +3,24 @@ import * as Docker from 'dockerode';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { fromEvent, map, Observable } from 'rxjs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class DockerService {
 	private docker: Docker;
 
-	constructor(@InjectQueue('docker') private readonly dockerQueue: Queue) {
-		this.docker = new Docker();
+	constructor(
+		@InjectQueue('docker') private readonly dockerQueue: Queue,
+		private readonly configService: ConfigService,
+	) {
+		const isDockerized = this.configService.get('IS_DOCKERIZED');
+		console.log(`IS_DOCKERIZED: ${isDockerized}`);
+
+		if (!isDockerized) {
+			this.docker = new Docker();
+		} else {
+			this.docker = new Docker({ socketPath: '/var/run/docker.sock' });
+		}
 	}
 
 	async getAllContainers() {
@@ -17,7 +28,7 @@ export class DockerService {
 	}
 
 	async getComposedContainers() {
-		const containers = await this.docker.listContainers({ all: true });
+		const containers = await this.getAllContainers();
 
 		const projectGroups = {};
 

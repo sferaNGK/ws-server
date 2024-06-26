@@ -13,7 +13,7 @@ import { ContainerActionDto } from '@/docker/dto';
 export class DockerController {
 	constructor(private readonly dockerService: DockerService) {}
 
-	@Get('/')
+	@Get()
 	async getComposedContainers() {
 		return this.dockerService.getComposedContainers();
 	}

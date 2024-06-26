@@ -15,6 +15,7 @@ import { FastifyAdapter } from '@bull-board/fastify';
 import { CacheModule } from '@nestjs/cache-manager';
 import type { RedisClientOptions } from 'redis';
 import { redisStore } from 'cache-manager-redis-yet';
+import { BoardGateway } from '@/events/board/board.gateway';
 
 @Module({
 	imports: [
@@ -61,6 +62,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 			route: '/bull-board',
 			adapter: FastifyAdapter,
 		}),
+		BoardGateway,
 	],
 	controllers: [],
 	providers: [],

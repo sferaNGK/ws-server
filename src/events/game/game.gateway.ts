@@ -156,11 +156,6 @@ export class GameGateway {
 
 			//TODO: отправить игру на клиент в случае ВР
 
-			// this.server.emit('game:start', {
-			// 	isStarted: updatedGameSession.isStarted,
-			// 	game,
-			// 	clientIdPhone: socket.handshake.query.clientIdPhone as string,
-			// });
 			socket.emit('game:start', {
 				isStarted: updatedGameSession.isStarted,
 				game,
